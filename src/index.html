@@ -921,10 +921,13 @@ body{
       const dist = Math.abs(slot);
       const sc = (1 - dist * GEO.scaleFall) * lerp(.24, 1, t);
 
-      /* the centre slot belongs to the cup: fade that card out */
-      const centre = Math.max(0, 1 - dist / .92);
-      const edge   = Math.max(0, Math.min(1, (N / 2 - dist) / .85));
-      const op = (1 - centre) * edge * t;
+      /* The centre slot belongs to the cup, so its card must reach a true
+         zero — a bone card at even 4 % reads as a ghost over the drink.
+         Smoothstep gets there cleanly and also softens the emergence. */
+      const hole = Math.min(1, dist / .95);
+      const holeS = hole * hole * (3 - 2 * hole);
+      const edge = Math.max(0, Math.min(1, (N / 2 - dist) / .85));
+      const op = holeS * edge * t;
 
       const s = cards[i].style;
       s.setProperty("--x", x.toFixed(2) + "px");
