@@ -1,0 +1,1399 @@
+<title>Дизайн-система soen</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+/*@FONTS@*/
+
+/* ═══════════════════════════════════════════════════════════════
+   TOKENS — light on bare :root, so the unstamped state resolves;
+   dark redefines the same names twice (media + [data-theme]).
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --ink:       #0E1309;
+  --forest:    #29331A;
+  --moss:      #A3A55D;
+  --moss-dp:   #6E7440;
+  --bone:      #EDEBDD;
+  --bone-dim:  #C9C8B2;
+
+  --paper:     #F2F0E3;
+  --paper-2:   #E8E5D4;
+  --text:      #1A2110;
+  --text-dim:  #5C6340;
+  --text-mute: #7E8459;
+  --rule:      #CFCDB6;
+  --rule-soft: #DFDCC8;
+  --accent:    #55701F;
+  --accent-on: #FFFFFF;
+  --code-bg:   #E4E1CE;
+
+  --r-sm: 6px;
+  --r-md: 12px;
+  --r-lg: 20px;
+
+  --font-display: 'Prata', 'Iowan Old Style', Georgia, serif;
+  --font-ui: 'Golos', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetMono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --measure: 68ch;
+  --gutter: 96px;
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:     #0B0F07;
+    --paper-2:   #131A0C;
+    --text:      #E7E6D6;
+    --text-dim:  #A0A578;
+    --text-mute: #7C8158;
+    --rule:      #2A3318;
+    --rule-soft: #1E2611;
+    --accent:    #A8BC5E;
+    --accent-on: #0B0F07;
+    --code-bg:   #161E0D;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:     #0B0F07;
+  --paper-2:   #131A0C;
+  --text:      #E7E6D6;
+  --text-dim:  #A0A578;
+  --text-mute: #7C8158;
+  --rule:      #2A3318;
+  --rule-soft: #1E2611;
+  --accent:    #A8BC5E;
+  --accent-on: #0B0F07;
+  --code-bg:   #161E0D;
+}
+
+*, *::before, *::after{ box-sizing: border-box; }
+
+body{
+  margin: 0;
+  background: var(--paper);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── page frame ───────────────────────────────────────────── */
+.wrap{
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(24px, 5vw, 72px) clamp(18px, 4vw, 56px) 120px;
+}
+
+/* every block is a two-column record: mono gutter + content */
+.row{
+  display: grid;
+  grid-template-columns: var(--gutter) minmax(0, 1fr);
+  gap: 0 32px;
+  align-items: start;
+}
+.row + .row{ margin-top: 44px; }
+.gut{
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  padding-top: .55em;
+  font-variant-numeric: tabular-nums;
+}
+
+.prose{ max-width: var(--measure); }
+.prose p{ margin: 0 0 .95em; }
+.prose p:last-child{ margin-bottom: 0; }
+.prose ul{ margin: 0 0 1em; padding-left: 1.15em; }
+.prose li{ margin-bottom: .42em; }
+.prose li::marker{ color: var(--accent); }
+strong{ font-weight: 700; }
+em{ font-style: normal; color: var(--text-dim); }
+
+a{ color: var(--text); text-decoration-color: var(--accent); text-underline-offset: 3px; }
+:focus-visible{ outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+
+code, .m{
+  font-family: var(--font-mono);
+  font-size: .88em;
+  font-variant-numeric: tabular-nums;
+}
+code{
+  background: var(--code-bg);
+  padding: .1em .38em;
+  border-radius: var(--r-sm);
+}
+
+/* ── masthead ─────────────────────────────────────────────── */
+.head{
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: clamp(26px, 4vw, 44px);
+  margin-bottom: clamp(34px, 5vw, 60px);
+}
+.eyebrow{
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  margin: 0 0 22px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+}
+h1{
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(38px, 7vw, 88px);
+  line-height: 1.02;
+  letter-spacing: -.02em;
+  margin: 0 0 .42em;
+  text-wrap: balance;
+}
+.standfirst{
+  max-width: 62ch;
+  font-size: clamp(16px, 1.5vw, 19.5px);
+  line-height: 1.55;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+/* ── section headings ─────────────────────────────────────── */
+.sec{
+  margin-top: clamp(58px, 8vw, 104px);
+  padding-top: 26px;
+  border-top: 1px solid var(--rule);
+}
+/* the masthead already ends in a rule — don't stack a second one plus a
+   full section gap under it */
+.head + .sec{
+  margin-top: clamp(30px, 4vw, 52px);
+  padding-top: 0;
+  border-top: 0;
+}
+.sec > h2{
+  display: grid;
+  grid-template-columns: var(--gutter) minmax(0, 1fr);
+  gap: 0 32px;
+  align-items: baseline;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(25px, 3.1vw, 40px);
+  line-height: 1.14;
+  letter-spacing: -.012em;
+  margin: 0 0 30px;
+}
+.sec > h2 .n{
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+h3{
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -.005em;
+  margin: 34px 0 12px;
+}
+h3:first-child{ margin-top: 0; }
+
+/* ── labels & chips ───────────────────────────────────────── */
+.tag{
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+  background: var(--accent);
+  color: var(--accent-on);
+}
+.tag.ghost{
+  background: transparent;
+  color: var(--text-mute);
+  box-shadow: 0 0 0 1px var(--rule) inset;
+}
+
+/* ── tables ───────────────────────────────────────────────── */
+.tscroll{
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--paper-2);
+}
+table{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+}
+caption{
+  caption-side: top;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  padding: 11px 14px 0;
+}
+th, td{
+  text-align: left;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--rule-soft);
+  vertical-align: top;
+}
+thead th{
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  white-space: nowrap;
+}
+tbody tr:last-child td{ border-bottom: 0; }
+td.num, th.num{ font-family: var(--font-mono); font-size: 12.5px; white-space: nowrap; }
+td.k{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text); white-space: nowrap; }
+
+/* ── figures ──────────────────────────────────────────────── */
+figure{
+  margin: 22px 0 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--paper-2);
+  overflow: hidden;
+}
+figure svg{ display: block; width: 100%; height: auto; }
+figcaption{
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1.55;
+  letter-spacing: .04em;
+  color: var(--text-mute);
+  padding: 11px 14px 13px;
+  border-top: 1px solid var(--rule-soft);
+}
+/* diagram ink, taken from tokens so both themes hold */
+.dg-line{ stroke: var(--rule); }
+.dg-ink{ stroke: var(--text-dim); }
+.dg-acc{ stroke: var(--accent); }
+.dg-fill{ fill: var(--paper); }
+.dg-card{ fill: var(--bone); stroke: var(--moss-dp); }
+.dg-t{
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .06em;
+  fill: var(--text-dim);
+}
+.dg-t.acc{ fill: var(--accent); }
+.dg-t.big{ font-size: 12px; fill: var(--text); }
+
+/* ── swatches ─────────────────────────────────────────────── */
+.swatches{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+.sw{
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--paper-2);
+}
+.sw i{ display: block; height: 62px; }
+.sw span{
+  display: block;
+  padding: 8px 11px 10px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+.sw b{ display: block; color: var(--text); font-weight: 600; }
+
+/* ── specimen blocks ──────────────────────────────────────── */
+.spec{
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--paper-2);
+  padding: 22px 24px;
+  margin-top: 20px;
+}
+.spec + .spec{ margin-top: 12px; }
+.spec .lab{
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  margin-bottom: 12px;
+}
+.sp-display{
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4.4vw, 54px);
+  line-height: 1.06;
+  letter-spacing: -.018em;
+  margin: 0;
+}
+.sp-ui{ font-size: 17px; line-height: 1.6; margin: 0; max-width: 56ch; }
+.sp-mono{
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 0;
+}
+.weights{ display: flex; flex-wrap: wrap; gap: 4px 22px; margin: 12px 0 0; padding: 0; list-style: none; }
+.weights li{ font-size: 16px; }
+.weights span{
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .1em;
+  color: var(--text-mute);
+  display: block;
+}
+
+/* ── the dark demo strip: components on their real ground ─── */
+.onink{
+  margin-top: 20px;
+  border-radius: var(--r-lg);
+  background: var(--ink);
+  background-image:
+    radial-gradient(120% 80% at 50% 0%, #2A3418 0%, #0E1309 72%);
+  padding: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+  align-items: center;
+  justify-content: center;
+}
+.onink .cap{
+  flex: 1 0 100%;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: rgba(237, 235, 221, .5);
+}
+
+.d-pill{
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(237, 235, 221, .13);
+  box-shadow: 0 0 0 1px rgba(237, 235, 221, .1) inset;
+}
+.d-pill i{
+  width: 34px; height: 34px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+}
+.d-pill i:last-child{ background: var(--bone); }
+.d-pill svg{ width: 15px; height: 15px; color: var(--bone); }
+.d-pill i:last-child svg{ color: var(--ink); }
+
+.d-card{
+  width: 84px; height: 84px;
+  border-radius: 15px;
+  background: linear-gradient(168deg, #F4F2E6, #EDEBDD 48%, #DEDCCB);
+  box-shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 14px 22px -12px rgba(6,9,4,.75);
+  transform: rotate(-8deg);
+}
+.d-chip{
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 10px 14px 11px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #F5F3E7, #EDEBDD);
+  box-shadow: 0 1px 0 rgba(255,255,255,.8) inset, 0 14px 22px -12px rgba(6,9,4,.75);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.d-chip u{
+  width: 20px; height: 20px;
+  border-radius: 7px;
+  background: #C2CE9A;
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1;
+}
+.d-anno{
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .16em;
+  color: rgba(237, 235, 221, .82);
+  text-align: left;
+}
+.d-anno b{ display: block; font-weight: 600; }
+.d-anno s{
+  display: block;
+  width: 84px;
+  height: 1px;
+  background: rgba(237, 235, 221, .35);
+  margin: 8px 0;
+}
+.d-anno em{ color: rgba(237, 235, 221, .5); font-style: normal; letter-spacing: .04em; }
+.d-data{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(92px, auto));
+  gap: 14px 34px;
+  color: var(--bone);
+}
+.d-data dt{
+  font-size: 12.5px;
+  color: rgba(237, 235, 221, .62);
+}
+.d-data dd{
+  margin: 1px 0 0;
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── callout ──────────────────────────────────────────────── */
+.note{
+  margin-top: 20px;
+  border-left: 2px solid var(--accent);
+  background: var(--paper-2);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  padding: 15px 18px;
+  font-size: 14.5px;
+  line-height: 1.58;
+  color: var(--text-dim);
+  max-width: var(--measure);
+}
+.note b{ color: var(--text); }
+
+/* ── two-up ───────────────────────────────────────────────── */
+.twoup{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(268px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* ── scale ruler ──────────────────────────────────────────── */
+.ruler{ margin-top: 20px; display: grid; gap: 2px; }
+.ruler div{
+  display: grid;
+  grid-template-columns: 74px 58px 1fr;
+  gap: 14px;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-mute);
+  font-variant-numeric: tabular-nums;
+}
+.ruler i{
+  height: 9px;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: .82;
+}
+
+footer{
+  margin-top: clamp(60px, 8vw, 100px);
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 26px;
+}
+
+@media (max-width: 780px){
+  :root{ --gutter: 0px; }
+  .row, .sec > h2{ grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .gut{ padding-top: 0; }
+  .onink{ padding: 22px; gap: 20px; }
+}
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}
+</style>
+
+<div class="wrap">
+
+  <header class="head">
+    <p class="eyebrow">
+      <span>Разбор трёх референсов</span>
+      <span>→</span>
+      <span>Рабочая система</span>
+      <span>→</span>
+      <span>soen matcha bar</span>
+    </p>
+    <h1>Дизайн-система soen</h1>
+    <p class="standfirst">
+      Три референса разобраны по кадрам и пикселям: анимированный герой кафе
+      <em>kumo</em>, сторис бегового бренда <em>tempo</em> и финтех-интерфейс
+      <em>lumen</em>. Ниже — измеренные числа каждого, механика анимации,
+      и собранная из них система, по которой сделан рабочий первый экран
+      с выбором вкуса.
+    </p>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <section class="sec">
+    <h2><span class="n">01</span><span>kumo — как устроен анимированный герой</span></h2>
+
+    <div class="row">
+      <div class="gut">Источник</div>
+      <div class="prose">
+        <p>
+          Видео разобрано на кадры и промерено по пикселям: <span class="m">800×600</span>,
+          540 кадров, 60 fps, петля <span class="m">9,0 с</span>. Все размеры ниже
+          сняты с кадра в состоянии покоя и пересчитаны в доли — так их можно
+          переносить на любую ширину.
+        </p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="gut">Отступы<br>и размеры</div>
+      <div>
+        <div class="tscroll">
+          <table>
+            <caption>Измерено на кадре 800 × 600</caption>
+            <thead>
+              <tr><th>Элемент</th><th class="num">При 800 px</th><th class="num">В долях</th><th class="num">При 1440 px</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Фон страницы (олива)</td><td class="k">#A6A45E</td><td>—</td><td class="k">#A6A45E</td></tr>
+              <tr><td>Экран: отступ слева / справа</td><td class="num">44 / 45</td><td class="num">5,5 % ширины</td><td class="num">79 / 81</td></tr>
+              <tr><td>Экран: отступ сверху / снизу</td><td class="num">71 / 48</td><td class="num">11,8 / 8,0 %</td><td class="num">128 / 86</td></tr>
+              <tr><td>Размер экрана</td><td class="num">711 × 481</td><td class="num">1,478 : 1</td><td class="num">1281 × 866</td></tr>
+              <tr><td>Радиус экрана</td><td class="num">≈ 26</td><td class="num">5,4 % высоты</td><td class="num">46</td></tr>
+              <tr><td><strong>Логотип от левого края экрана</strong></td><td class="num">35</td><td class="num">4,9 % ширины экрана</td><td class="num">63</td></tr>
+              <tr><td><strong>Логотип от верха экрана</strong></td><td class="num">34 (центр 40)</td><td class="num">7,1 %</td><td class="num">61 (центр 72)</td></tr>
+              <tr><td>Pill-навигация</td><td class="num">130 × 28</td><td class="num">—</td><td class="num">234 × 50</td></tr>
+              <tr><td>Круглая кнопка справа</td><td class="num">⌀ 28</td><td class="num">—</td><td class="num">⌀ 50</td></tr>
+              <tr><td>Карточка вкуса</td><td class="num">≈ 95</td><td class="num">11,9 % ширины</td><td class="num">168</td></tr>
+              <tr><td>Радиус карточки</td><td class="num">≈ 17</td><td class="num">18 % от карточки</td><td class="num">30</td></tr>
+              <tr><td>Стакан</td><td class="num">164 × 232</td><td class="num">20,5 % ширины</td><td class="num">295 × 418</td></tr>
+              <tr><td>Кэп-высота заголовка</td><td class="num">≈ 40</td><td class="num">—</td><td class="num">72 (кегль ≈ 104)</td></tr>
+              <tr><td>Лицо карточки</td><td class="k">#E9E9D9</td><td>—</td><td class="k">#E9E9D9</td></tr>
+              <tr><td>Фон экрана (низ / середина)</td><td class="k">#100F08 / #354421</td><td>—</td><td class="k">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note">
+          <b>Ответ на вопрос про отступы логотипа:</b> он не «на глаз» — это
+          <span class="m">4,9 %</span> ширины экрана слева и <span class="m">7,1 %</span>
+          сверху, то есть примерно <span class="m">35 / 40 px</span> на кадре 800 px
+          и <span class="m">63 / 72 px</span> в пересчёте на 1440. Внешняя рамка вокруг
+          экрана — отдельная величина: <span class="m">5,5 %</span> ширины по бокам.
+          В системе ниже это сведено к одной переменной <code>--pad</code>.
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="gut">Геометрия<br>дуги</div>
+      <div>
+        <div class="prose">
+          <p>
+            Карточки не разложены вручную — они сидят на окружности. Я снял
+            координаты центров карточек и подогнал параболу
+            <span class="m">y = y₀ + k·dx²</span>: получилось
+            <span class="m">k ≈ 0,001</span> при ширине 800, то есть радиус
+            <span class="m">R = 1 / 2k = 500 px</span> (<span class="m">900 px</span>
+            в пересчёте на 1440). Шаг между соседями —
+            <span class="m">asin(155 / 500) = 18°</span>.
+          </p>
+          <p>
+            Центральный слот дуги <strong>пустой</strong>: там стоит стакан. Выбранный
+            вкус не показывает карточку — он «налит» в стакан. Это и есть главный
+            приём: выбор происходит на первом экране, а результат виден тут же,
+            в самом продукте.
+          </p>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 760 300" role="img" aria-label="Схема дуги: карточки на окружности радиусом R, центральный слот занят стаканом">
+            <!-- horizon of the ring centre -->
+            <line x1="20" y1="60" x2="740" y2="60" class="dg-line" stroke-width="1" stroke-dasharray="3 4"/>
+            <!-- the arc itself: top of a circle whose centre is below -->
+            <path d="M 88.8 208.3 A 360 360 0 0 1 671.2 208.3" fill="none" class="dg-acc" stroke-width="1.4"/>
+            <!-- radius spokes -->
+            <g class="dg-line" stroke-width="1" stroke-dasharray="2 4">
+              <line x1="380" y1="284" x2="380" y2="60"/>
+              <line x1="380" y1="284" x2="591.6" y2="128.8"/>
+            </g>
+            <!-- angle mark -->
+            <path d="M 380 214 A 70 70 0 0 1 421 227" fill="none" class="dg-acc" stroke-width="1.2"/>
+            <text x="392" y="243" class="dg-t acc">18°</text>
+            <text x="300" y="180" class="dg-t">R = 900</text>
+
+            <!-- cards on the arc: x=R sinθ, y=R(1−cosθ), rotation = θ×0.65 -->
+            <g class="dg-card" stroke-width="1.2">
+              <rect x="-22" y="-22" width="44" height="44" rx="8" transform="translate(268.8 77.6) rotate(-11.7)"/>
+              <rect x="-22" y="-22" width="44" height="44" rx="8" transform="translate(168.4 128.8) rotate(-23.4)"/>
+              <rect x="-22" y="-22" width="44" height="44" rx="8" transform="translate(88.8 208.3) rotate(-35.1)"/>
+              <rect x="-22" y="-22" width="44" height="44" rx="8" transform="translate(491.2 77.6) rotate(11.7)"/>
+              <rect x="-22" y="-22" width="44" height="44" rx="8" transform="translate(591.6 128.8) rotate(23.4)"/>
+              <rect x="-22" y="-22" width="44" height="44" rx="8" transform="translate(671.2 208.3) rotate(35.1)"/>
+            </g>
+
+            <!-- the empty centre slot, occupied by the cup -->
+            <g transform="translate(380 60)">
+              <rect x="-22" y="-22" width="44" height="44" rx="8" fill="none" class="dg-acc" stroke-width="1.2" stroke-dasharray="3 3"/>
+              <path d="M-13 -16 L-9 22 A9 3 0 0 0 9 22 L13 -16 A13 4 0 0 1 -13 -16 Z"
+                    class="dg-fill dg-ink" stroke-width="1.3"/>
+            </g>
+            <text x="380" y="26" class="dg-t big" text-anchor="middle">слот 0 — стакан</text>
+
+            <!-- centre marker -->
+            <circle cx="380" cy="284" r="2.6" class="dg-acc" fill="none" stroke-width="1.4"/>
+            <text x="380" y="298" class="dg-t acc" text-anchor="middle">центр окружности (ниже экрана)</text>
+          </svg>
+          <figcaption>
+            Позиция слота n: x = R·sin(nΔ), y = R·(1 − cos nΔ), где Δ = 18°.
+            Поворот карточки = nΔ × 0,65 — не полная касательная, иначе крайние
+            карточки заваливаются и перестают читаться. Масштаб падает на 5,5 %
+            за слот, крайние гасятся по прозрачности.
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="gut">Анимация:<br>что именно<br>двигается</div>
+      <div>
+        <div class="prose">
+          <p>
+            В референсе анимирован не фон как таковой — фон там фотография.
+            Двигаются четыре вещи, и именно их стоит копировать:
+          </p>
+          <ul>
+            <li><strong>Маска экрана.</strong> На кадре 45 (0,75 с) виден только тёмный
+              срез сверху — содержимое раскрывается вниз, как штора. Это
+              <code>clip-path: inset()</code>, а не fade.</li>
+            <li><strong>Всплытие стакана.</strong> Кадр 90 (1,5 с): стакан уже в центре,
+              карточек и интерфейса ещё нет. Он приходит первым и один.</li>
+            <li><strong>Разлёт карточек по дуге.</strong> Кадр 135 (2,25 с): карточки идут
+              от центра наружу вдоль той же окружности, со сдвигом по времени.</li>
+            <li><strong>Раскрытие заголовка по маске.</strong> На кадре 135 заголовок
+              обрезан справа — буквы выезжают, а не проявляются.</li>
+          </ul>
+          <p>
+            Дальше, кадры 180–540, идёт основной цикл: карусель проворачивается,
+            и <strong>вместе с ней меняется сам напиток</strong>. На кадре 225 в стакане
+            уже розовая земляника, а подпись обрезана до «wberry»; на 405 —
+            бордовая клюква и «runberry». То есть название не растворяется, а
+            <strong>уезжает по горизонтали</strong>, обрезаясь шириной стакана. Именно
+            эта деталь делает переход «физическим».
+          </p>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 760 250" role="img" aria-label="Тайминг вступительной анимации по дорожкам">
+            <!-- axis -->
+            <g class="dg-line" stroke-width="1">
+              <line x1="150" y1="34" x2="740" y2="34"/>
+            </g>
+            <g class="dg-t" text-anchor="middle">
+              <text x="150" y="26">0</text>
+              <text x="243" y="26">300</text>
+              <text x="336" y="26">600</text>
+              <text x="429" y="26">900</text>
+              <text x="522" y="26">1200</text>
+              <text x="615" y="26">1500</text>
+              <text x="708" y="26">1800 мс</text>
+            </g>
+            <g class="dg-line" stroke-width="1" stroke-dasharray="2 5">
+              <line x1="243" y1="34" x2="243" y2="228"/>
+              <line x1="336" y1="34" x2="336" y2="228"/>
+              <line x1="429" y1="34" x2="429" y2="228"/>
+              <line x1="522" y1="34" x2="522" y2="228"/>
+              <line x1="615" y1="34" x2="615" y2="228"/>
+              <line x1="708" y1="34" x2="708" y2="228"/>
+            </g>
+
+            <!-- 0.31 px per ms; bars: x = 150 + start*0.31, w = dur*0.31 -->
+            <g fill="var(--accent)" opacity=".85">
+              <rect x="150"    y="46"  width="254.2" height="14" rx="4"/>
+              <rect x="150"    y="72"  width="325.5" height="14" rx="4"/>
+              <rect x="230.6"  y="98"  width="310"   height="14" rx="4"/>
+              <rect x="354.6"  y="124" width="217"   height="14" rx="4"/>
+              <rect x="379.4"  y="150" width="279"   height="14" rx="4"/>
+              <rect x="441.4"  y="176" width="186"   height="14" rx="4"/>
+              <rect x="472.4"  y="202" width="186"   height="14" rx="4"/>
+            </g>
+            <g class="dg-t" text-anchor="end">
+              <text x="138" y="57">маска экрана</text>
+              <text x="138" y="83">дуга карточек</text>
+              <text x="138" y="109">стакан</text>
+              <text x="138" y="135">подпись вкуса</text>
+              <text x="138" y="161">заголовок ×3</text>
+              <text x="138" y="187">шапка ×3</text>
+              <text x="138" y="213">чип цены</text>
+            </g>
+          </svg>
+          <figcaption>
+            Порядок важнее длительностей: сначала открывается экран, затем
+            приходит продукт, и только потом — выбор, заголовок и интерфейс.
+            Обратный порядок читается как «страница догружается».
+          </figcaption>
+        </figure>
+
+        <div class="note">
+          <b>Мелочь из разбора:</b> в самом референсе заголовок набран с опечаткой —
+          «Chooise you matcha tea» вместо «Choose your». Стоит упомянуть, потому что
+          это ровно тот случай, когда красивая анимация уводит внимание от текста.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <section class="sec">
+    <h2><span class="n">02</span><span>tempo — дисциплина типографики и данных</span></h2>
+
+    <div class="row">
+      <div class="gut">Что там<br>сделано</div>
+      <div class="prose">
+        <ul>
+          <li><strong>Кремовый фон и никакой рамки.</strong> Подложка ≈ <code>#FCF3DC</code>,
+            сторис-макеты 9:16 лежат прямо на ней. Тепло фона держит весь бренд,
+            хотя внутри кадров — холодная лесная съёмка.</li>
+          <li><strong>Три типографических роли, жёстко разделённые.</strong> Логотип
+            <em>tempo</em> строчными с надстрочным ®; микро-подписи капслоком с
+            широким трекингом (MOVE / TRACK / REFLECT); данные — обычным начертанием.
+            Ролей ровно три, и они не смешиваются.</li>
+          <li><strong>Пара «подпись / значение».</strong> Distance 14,8 km · Pace 7:36 /km ·
+            Time 1:52:36 · Elevation 685 m — сетка 2×2, подпись над значением, без
+            линеек и рамок. Это самый переносимый паттерн из всех трёх референсов.</li>
+          <li><strong>Белый текст прямо на фото, без плашек.</strong> Работает только потому,
+            что съёмка подобрана тёмная — это требование к ассетам, а не к вёрстке.</li>
+          <li><strong>Один рисованный элемент.</strong> Кривая-загогулина вместо карты
+            маршрута. Один такой «человеческий» штрих на всю строгую сетку.</li>
+          <li><strong>Смаз в движении как правило съёмки.</strong> Ни одного статичного кадра:
+            бренд про темп, и ассеты это буквально показывают.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="gut">Что я<br>взял</div>
+      <div>
+        <div class="prose">
+          <p>
+            Пару «подпись / значение» и правило трёх типографических ролей —
+            целиком. Кремовый фон — нет: он бы конфликтовал с оливковой подложкой
+            kumo, а два тёплых фона в одной системе спорят друг с другом.
+          </p>
+        </div>
+        <div class="onink">
+          <span class="cap">Пара «подпись / значение» — перенесена в soen</span>
+          <dl class="d-data">
+            <div><dt>Объём</dt><dd>400 мл</dd></div>
+            <div><dt>Матча</dt><dd>4 г</dd></div>
+            <div><dt>Кофеин</dt><dd>68 мг</dd></div>
+            <div><dt>Заварка</dt><dd>70 °C</dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <section class="sec">
+    <h2><span class="n">03</span><span>lumen — техническая аннотация как язык</span></h2>
+
+    <div class="row">
+      <div class="gut">Что там<br>сделано</div>
+      <div class="prose">
+        <ul>
+          <li><strong>Почти чёрный фон</strong> ≈ <code>#05070A</code> и <strong>один</strong>
+            акцент — бледно-голубой ≈ <code>#A8CBEE</code>. Причём акцент работает
+            только заливкой плашек с чёрным текстом, и никогда — цветом текста.
+            Отсюда правило: акцент — это фон, а не чернила.</li>
+          <li><strong>Слой аннотаций поверх героя.</strong> Подписи в квадратных скобках
+            (<span class="m">[ CORE_ENTITY ]</span>, <span class="m">[ LUMINOUS_INSIGHT ]</span>)
+            соединены волосяными линиями с квадратными визирами на объекте. Приём
+            превращает картинку в схему и добавляет доверия — что для финтеха и есть цель.</li>
+          <li><strong>Нумерованная навигация в snake_case:</strong>
+            <span class="m">01. ECOSYSTEM</span>, <span class="m">02. LIQUIDITY_POOLS</span>.
+            Нумерация здесь честная — это порядок разделов.</li>
+          <li><strong>Сетка 1 px с крестами на пересечениях.</strong> Почти не видна,
+            но задаёт «инженерность» всей странице.</li>
+          <li><strong>Срезанный угол</strong> у информационной панели — единственная
+            вольность в геометрии, и работает именно потому, что одна.</li>
+          <li><strong>Заголовок</strong> крупным геометрическим гротеском, с точками:
+            «Liquid Assets. Luminous Returns.» Точка в заголовке замедляет чтение
+            и звучит утвердительно.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="gut">Что я<br>взял</div>
+      <div>
+        <div class="prose">
+          <p>
+            Моношрифтовые подписи в скобках и правило «акцент — заливка, не текст».
+            Слой аннотаций с визирами — в системе есть, но для кафе применяется
+            дозированно: на первом экране это единственная подпись
+            <span class="m">[ MATCHA_ORIGIN ]</span> под названием вкуса. Целую схему
+            с выносками над стаканом матчи ставить незачем — это язык банка, не кафе.
+          </p>
+        </div>
+        <div class="onink">
+          <span class="cap">Аннотация — дозированно</span>
+          <div class="d-anno">
+            <b>[ MATCHA_ORIGIN ]</b>
+            <s></s>
+            <em>Uji, Kyoto · первый сбор</em>
+          </div>
+          <div class="d-card"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="gut">Сводка</div>
+      <div class="tscroll">
+        <table>
+          <caption>Что взято, что отброшено</caption>
+          <thead><tr><th>Приём</th><th>Откуда</th><th>Решение</th></tr></thead>
+          <tbody>
+            <tr><td>Дуга выбора с пустым центром</td><td>kumo</td><td>Взято, это ядро</td></tr>
+            <tr><td>Морфинг продукта под выбор</td><td>kumo</td><td>Взято и усилено: 4 слоя вместо 3</td></tr>
+            <tr><td>Подпись-«одометр» с обрезкой</td><td>kumo</td><td>Взято</td></tr>
+            <tr><td>Вложенный экран с радиусом</td><td>kumo</td><td>Взято как приём подачи</td></tr>
+            <tr><td>Пара «подпись / значение»</td><td>tempo</td><td>Взято</td></tr>
+            <tr><td>Три типографические роли</td><td>tempo</td><td>Взято</td></tr>
+            <tr><td>Кремовый фон</td><td>tempo</td><td>Отброшено — спорит с оливой</td></tr>
+            <tr><td>Смаз в съёмке</td><td>tempo</td><td>Неприменимо: фон процедурный, без фото</td></tr>
+            <tr><td>Моноподписи в скобках</td><td>lumen</td><td>Взято</td></tr>
+            <tr><td>Акцент только заливкой</td><td>lumen</td><td>Взято как правило</td></tr>
+            <tr><td>Выноски с визирами</td><td>lumen</td><td>Взято дозированно</td></tr>
+            <tr><td>Сетка с крестами</td><td>lumen</td><td>Отброшено — герой и так плотный</td></tr>
+            <tr><td>Срезанный угол</td><td>lumen</td><td>Отброшено — радиусы уже заняты</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <section class="sec">
+    <h2><span class="n">04</span><span>Цвет</span></h2>
+
+    <div class="row">
+      <div class="gut">Основа</div>
+      <div>
+        <div class="prose">
+          <p>
+            Нейтрали не серые, а сдвинутые в зелень — так они не спорят с матчей.
+            <span class="m">#0E1309</span> — это не чёрный, а очень тёмный зелёный,
+            и разница видна именно рядом с продуктом.
+          </p>
+        </div>
+        <div class="swatches">
+          <div class="sw"><i style="background:#0E1309"></i><span><b>--ink</b>#0E1309<br>грунт экрана</span></div>
+          <div class="sw"><i style="background:#29331A"></i><span><b>--forest</b>#29331A<br>середина фона</span></div>
+          <div class="sw"><i style="background:#A3A55D"></i><span><b>--moss</b>#A3A55D<br>подложка страницы</span></div>
+          <div class="sw"><i style="background:#6E7440"></i><span><b>--moss-dp</b>#6E7440<br>линейки на светлом</span></div>
+          <div class="sw"><i style="background:#EDEBDD"></i><span><b>--bone</b>#EDEBDD<br>лицо карточек, текст</span></div>
+          <div class="sw"><i style="background:#C9C8B2"></i><span><b>--bone-dim</b>#C9C8B2<br>второй план</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="gut">Акцент —<br>переменная</div>
+      <div>
+        <div class="prose">
+          <p>
+            Здесь система отходит от всех трёх референсов. У tempo и lumen акцент
+            постоянный. В soen <strong>акцент — функция выбора пользователя</strong>:
+            выбранный вкус переписывает <code>--accent</code>, и вместе с ним меняются
+            свечение за стаканом, обводка чипа и активная метка на рейке.
+            Страница окрашивается тем, что человек выбрал.
+          </p>
+          <p>
+            Правило от lumen сохраняется: акцент идёт заливкой и подсветкой,
+            но никогда — цветом основного текста. Ни один из шести не проходит
+            контраст для набора на тёмном.
+          </p>
+        </div>
+        <div class="swatches">
+          <div class="sw"><i style="background:#7FA03C"></i><span><b>Классика</b>#7FA03C</span></div>
+          <div class="sw"><i style="background:#DE6472"></i><span><b>Земляника</b>#DE6472</span></div>
+          <div class="sw"><i style="background:#5A6AB4"></i><span><b>Голубика</b>#5A6AB4</span></div>
+          <div class="sw"><i style="background:#A82749"></i><span><b>Клюква</b>#A82749</span></div>
+          <div class="sw"><i style="background:#C08A3E"></i><span><b>Генмайча</b>#C08A3E</span></div>
+          <div class="sw"><i style="background:#D9B429"></i><span><b>Юдзу</b>#D9B429</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="gut">Фон:<br>рампа</div>
+      <div>
+        <div class="prose">
+          <p>
+            Отдельная рампа для процедурного фона. Она вынесена в токены не для
+            красоты: холст читает эти же переменные через
+            <code>getComputedStyle</code>, поэтому CSS и рисунок физически не могут
+            разойтись.
+          </p>
+        </div>
+        <div class="tscroll">
+          <table>
+            <caption>Токены фона</caption>
+            <thead><tr><th>Токен</th><th class="num">Значение</th><th>Роль</th></tr></thead>
+            <tbody>
+              <tr><td class="k">--bd-wash-a / b / c</td><td class="k">#1A2210 · #2A3418 · #080B04</td><td>вертикальная заливка</td></tr>
+              <tr><td class="k">--lobe-a … d</td><td class="k">#4C5F2C · #5A6F32 · #39491F · #2F3D1A</td><td>четыре дрейфующих пятна света</td></tr>
+              <tr><td class="k">--ridge-1a/1b, 2a/2b</td><td class="k">#3A4A22 → #161D0C</td><td>дальние хребты</td></tr>
+              <tr><td class="k">--ridge-3a/3b, 4a/4b</td><td class="k">#2A3517 → #070902</td><td>вершина и передняя насыпь</td></tr>
+              <tr><td class="k">--vignette</td><td class="k">#040602</td><td>затемнение по краям</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <section class="sec">
+    <h2><span class="n">05</span><span>Типографика</span></h2>
+
+    <div class="row">
+      <div class="gut">Три роли</div>
+      <div>
+        <div class="prose">
+          <p>
+            Ровно три гарнитуры, по правилу tempo. Все три поддерживают кириллицу
+            и вшиты в страницу как woff2 data-URI: внешние шрифтовые CDN на целевой
+            площадке заблокированы, и ссылка молча свалилась бы в подстановку.
+          </p>
+        </div>
+
+        <div class="spec">
+          <div class="lab">Prata · дисплей · только заголовки и название вкуса</div>
+          <p class="sp-display">Выберите свой вкус</p>
+          <p class="sp-mono" style="margin-top:14px">высокий контраст · 400 · трекинг −0,018em</p>
+        </div>
+
+        <div class="spec">
+          <div class="lab">Golos Text · интерфейс и текст · 400–900</div>
+          <p class="sp-ui">
+            Гротеск с кириллицей в основе. Держит и мелкий интерфейс, и абзац
+            текста — поэтому дисплейной гарнитуре не приходится работать там,
+            где она разваливается.
+          </p>
+          <ul class="weights">
+            <li style="font-weight:400">Земляника<span>400 Regular</span></li>
+            <li style="font-weight:500">Земляника<span>500 Medium</span></li>
+            <li style="font-weight:700">Земляника<span>700 Bold</span></li>
+            <li style="font-weight:900">Земляника<span>900 Black</span></li>
+          </ul>
+        </div>
+
+        <div class="spec">
+          <div class="lab">JetBrains Mono · данные и метки · 100–800</div>
+          <p class="sp-mono">[ MATCHA_ORIGIN ] · 380 ₽ · 01 / 06 · 4 г · 70 °C</p>
+          <p class="sp-mono" style="margin-top:10px">табличные цифры включены везде, где числа стоят в столбик</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="gut">Шкала</div>
+      <div>
+        <div class="ruler">
+          <div><span>104 / 96</span><span>Prata</span><i style="width:100%"></i></div>
+          <div><span>54</span><span>Prata</span><i style="width:52%"></i></div>
+          <div><span>40</span><span>Prata</span><i style="width:38%"></i></div>
+          <div><span>19,5</span><span>Golos</span><i style="width:19%"></i></div>
+          <div><span>17</span><span>Golos 700</span><i style="width:16%"></i></div>
+          <div><span>16</span><span>Golos 400</span><i style="width:15%"></i></div>
+          <div><span>13,5</span><span>Golos</span><i style="width:13%"></i></div>
+          <div><span>11</span><span>JetMono</span><i style="width:10%"></i></div>
+          <div><span>9,5</span><span>JetMono 600</span><i style="width:9%"></i></div>
+        </div>
+        <div class="note">
+          Заголовок героя — <code>clamp(28px, 6.6vw, 96px)</code>. Кэп-высота
+          в референсе — <span class="m">40 px</span> на кадре 800, что при пересчёте
+          даёт кегль около <span class="m">104 px</span> на 1440; я снизил до 96,
+          потому что кириллица шире латиницы и на 104 строка переставала дышать.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <section class="sec">
+    <h2><span class="n">06</span><span>Сетка, отступы, охранное поле</span></h2>
+
+    <div class="row">
+      <div class="gut">Одна<br>переменная</div>
+      <div>
+        <div class="prose">
+          <p>
+            Все внутренние отступы экрана сведены к
+            <code>--pad: clamp(18px, 4,4%, 64px)</code>. Число
+            <span class="m">4,4 %</span> — это измеренные <span class="m">35 px</span>
+            логотипа на кадре 800 px. Логотип, навигация, заголовок и рейка
+            выравниваются по одной и той же величине, поэтому на любой ширине
+            композиция не «съезжает».
+          </p>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 760 300" role="img" aria-label="Схема отступов экрана и охранного поля логотипа">
+            <!-- stage -->
+            <rect x="10" y="10" width="740" height="280" rx="10" fill="none" class="dg-line" stroke-width="1" stroke-dasharray="4 4"/>
+            <!-- screen -->
+            <rect x="52" y="42" width="656" height="216" rx="18" fill="none" class="dg-ink" stroke-width="1.4"/>
+
+            <!-- pad measures -->
+            <g class="dg-acc" stroke-width="1">
+              <line x1="10" y1="150" x2="52" y2="150"/>
+              <line x1="708" y1="150" x2="750" y2="150"/>
+              <line x1="380" y1="10" x2="380" y2="42"/>
+            </g>
+            <text x="31" y="143" class="dg-t acc" text-anchor="middle">5,5%</text>
+            <text x="729" y="143" class="dg-t acc" text-anchor="middle">5,5%</text>
+            <text x="388" y="30" class="dg-t acc">11,8%</text>
+
+            <!-- logo box + clear space -->
+            <rect x="86" y="70" width="72" height="22" fill="none" class="dg-ink" stroke-width="1.2"/>
+            <rect x="64" y="48" width="116" height="66" fill="none" class="dg-acc" stroke-width="1" stroke-dasharray="3 3"/>
+            <text x="122" y="85" class="dg-t big" text-anchor="middle">soen</text>
+            <g class="dg-acc" stroke-width="1">
+              <line x1="52" y1="81" x2="86" y2="81"/>
+              <line x1="122" y1="42" x2="122" y2="70"/>
+            </g>
+            <text x="69" y="74" class="dg-t acc" text-anchor="middle">4,9%</text>
+            <text x="130" y="58" class="dg-t acc">7,1%</text>
+            <text x="122" y="130" class="dg-t" text-anchor="middle">охранное поле = высота знака ×1,0 со всех сторон</text>
+
+            <!-- pill -->
+            <rect x="330" y="66" width="100" height="30" rx="15" fill="none" class="dg-ink" stroke-width="1.2"/>
+            <text x="380" y="112" class="dg-t" text-anchor="middle">pill 234×50 при 1440</text>
+            <!-- icon button -->
+            <circle cx="668" cy="81" r="15" fill="none" class="dg-ink" stroke-width="1.2"/>
+            <text x="668" y="112" class="dg-t" text-anchor="middle">⌀50</text>
+
+            <!-- headline zone -->
+            <rect x="140" y="182" width="480" height="38" fill="none" class="dg-line" stroke-width="1" stroke-dasharray="3 3"/>
+            <text x="380" y="206" class="dg-t big" text-anchor="middle">заголовок · по центру · низ = --pad × 0,78</text>
+            <text x="86" y="243" class="dg-t">рейка 01/06 · низ = --pad × 0,26</text>
+          </svg>
+          <figcaption>
+            Внешняя рамка вокруг экрана — приём подачи из kumo, а не требование.
+            Если убрать её и вывести экран в край, все внутренние пропорции
+            остаются те же: --pad считается от ширины экрана, а не страницы.
+          </figcaption>
+        </figure>
+
+        <div class="tscroll" style="margin-top:12px">
+          <table>
+            <caption>Радиусы</caption>
+            <thead><tr><th>Токен</th><th class="num">Значение</th><th>Где</th></tr></thead>
+            <tbody>
+              <tr><td class="k">--r-screen</td><td class="num">46 px → 30 px под 560</td><td>вложенный экран</td></tr>
+              <tr><td class="k">--r-card</td><td class="num">30 px (18 % от карточки)</td><td>карточка вкуса</td></tr>
+              <tr><td class="k">--r-chip</td><td class="num">14 px</td><td>чип цены</td></tr>
+              <tr><td class="k">--r-pill</td><td class="num">999 px</td><td>навигация, кнопки</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <section class="sec">
+    <h2><span class="n">07</span><span>Компоненты</span></h2>
+
+    <div class="row">
+      <div class="gut">На своём<br>грунте</div>
+      <div>
+        <div class="prose">
+          <p>
+            Компоненты показаны на тёмном фоне, потому что они там и живут.
+            Все три — стекло на подложке: <code>rgba(237,235,221,.13)</code> плюс
+            внутренняя обводка в 1 px и <code>backdrop-filter: blur(14px)</code>.
+            Активное состояние в pill — не цвет и не обводка, а <strong>инверсия</strong>:
+            костяная заливка, тёмная иконка.
+          </p>
+        </div>
+        <div class="onink">
+          <span class="cap">pill-навигация · чип цены · карточка вкуса</span>
+          <div class="d-pill">
+            <i><svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1.6"/><rect x="9" y="1" width="6" height="6" rx="1.6"/><rect x="1" y="9" width="6" height="6" rx="1.6"/><rect x="9" y="9" width="6" height="6" rx="1.6"/></svg></i>
+            <i><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="3.5" width="13" height="10" rx="2.2"/><path d="M1.5 6.6h13"/></svg></i>
+            <i><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.3"/><circle cx="8" cy="8" r="2.3"/></svg></i>
+            <i><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.6 2.2h1.9l1.9 8.1h7.3"/><path d="M4.6 4.6h9.8l-1.3 4.4H5.6"/><circle cx="6.4" cy="13.2" r="1.2"/><circle cx="12" cy="13.2" r="1.2"/></svg></i>
+          </div>
+          <div class="d-chip">380 ₽<u>+</u></div>
+          <div class="d-card"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="gut">Стакан:<br>4 полосы</div>
+      <div>
+        <div class="prose">
+          <p>
+            Продукт нарисован, не сфотографирован — значит его можно морфить.
+            Четыре полосы сверху вниз: <strong>шапка матчи → вкус → сливки →
+            матча-основа</strong>. Каждый напиток начинается и заканчивается матчей,
+            и это не украшение: на трёх полосах земляника давала
+            зелёный-белый-красный, то есть итальянский флаг. Четвёртая полоса
+            эту проблему снимает.
+          </p>
+          <p>
+            Граница между полосами — не линия, а <strong>эллипс, провисающий вниз</strong>:
+            именно так выглядит стык жидкостей через круглый стакан. Радиус
+            эллипса берётся от сужения стакана на этой глубине,
+            <span class="m">rx(y) = 146 + (110 − 146)·(y − 26) / 378</span>.
+          </p>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 760 260" role="img" aria-label="Модель четырёх слоёв напитка с провисающими границами">
+            <g transform="translate(120 20)">
+              <!-- cup outline -->
+              <path d="M4 16 L34 214 A58 9 0 0 0 150 214 L180 16 A88 12 0 0 1 4 16 Z"
+                    fill="none" class="dg-ink" stroke-width="1.5"/>
+              <!-- boundaries as downward ellipse arcs -->
+              <g class="dg-acc" stroke-width="1.4" fill="none">
+                <path d="M27 68 A70 12 0 0 0 157 68"/>
+                <path d="M46 140 A60 10 0 0 0 138 140"/>
+                <path d="M55 172 A54 9 0 0 0 129 172"/>
+              </g>
+              <g class="dg-t">
+                <text x="200" y="44">1 · шапка матчи</text>
+                <text x="200" y="110">2 · вкус — здесь живёт акцент</text>
+                <text x="200" y="160">3 · сливки</text>
+                <text x="200" y="196">4 · матча-основа</text>
+              </g>
+              <g class="dg-line" stroke-width="1" stroke-dasharray="2 4">
+                <line x1="186" y1="40" x2="196" y2="40"/>
+                <line x1="160" y1="106" x2="196" y2="106"/>
+                <line x1="142" y1="156" x2="196" y2="156"/>
+                <line x1="134" y1="192" x2="196" y2="192"/>
+              </g>
+              <!-- split fractions -->
+              <g class="dg-t acc" text-anchor="end">
+                <text x="-8" y="72">.26</text>
+                <text x="-8" y="144">.62</text>
+                <text x="-8" y="176">.76</text>
+              </g>
+            </g>
+          </svg>
+          <figcaption>
+            Доли границ и все четыре цвета интерполируются к цели покадрово,
+            а не переключаются: напиток перетекает за ~700 мс. Полосы шире
+            стакана и размыты на 3,6 единицы — иначе стык читается как печать,
+            а не как налитая жидкость.
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <section class="sec">
+    <h2><span class="n">08</span><span>Как сделан анимированный фон</span></h2>
+
+    <div class="row">
+      <div class="gut">Без<br>фотографий</div>
+      <div>
+        <div class="prose">
+          <p>
+            В референсе фон — студийная съёмка порошка матчи. Фотографии у меня нет,
+            и это к лучшему: процедурный фон <strong>по-настоящему живёт</strong>, а не
+            просто медленно зумится. Собран из пяти страт, и каждая решает
+            отдельную задачу производительности.
+          </p>
+        </div>
+
+        <figure>
+          <svg viewBox="0 0 1000 322" role="img" aria-label="Пять слоёв фона и их z-порядок">
+            <!-- stacked planes, back to front -->
+            <g class="dg-ink" fill="var(--paper)" stroke-width="1.3">
+              <path d="M40 56 L400 56 L470 92 L110 92 Z"/>
+              <path d="M40 108 L400 108 L470 144 L110 144 Z"/>
+              <path d="M40 160 L400 160 L470 196 L110 196 Z"/>
+              <path d="M40 212 L400 212 L470 248 L110 248 Z"/>
+              <path d="M40 264 L400 264 L470 300 L110 300 Z"/>
+            </g>
+            <!-- kept clear of the slanted left edge, which would otherwise
+                 cut straight through the label -->
+            <g class="dg-t big">
+              <text x="132" y="80">z0 · поле света</text>
+              <text x="132" y="132">z0 · хребты + виньетка</text>
+              <text x="132" y="184">z1 · зерно (CSS)</text>
+              <text x="132" y="236">z2 · стакан</text>
+              <text x="132" y="288">z3 · вершина + пылинки</text>
+            </g>
+            <g class="dg-line" stroke-width="1" stroke-dasharray="2 4">
+              <line x1="474" y1="74" x2="512" y2="74"/>
+              <line x1="474" y1="126" x2="512" y2="126"/>
+              <line x1="474" y1="178" x2="512" y2="178"/>
+              <line x1="474" y1="230" x2="512" y2="230"/>
+              <line x1="474" y1="282" x2="512" y2="282"/>
+            </g>
+            <g class="dg-t">
+              <text x="520" y="70">4 дрейфующих пятна + свечение вкуса;</text>
+              <text x="520" y="84">рисуется в ¼ разрешения и растягивается</text>
+              <text x="520" y="122">fbm-плитки, печённые один раз на ресайз,</text>
+              <text x="520" y="136">затем сдвиг по X → настоящий параллакс</text>
+              <text x="520" y="174">плитка 170², mix-blend-mode: overlay,</text>
+              <text x="520" y="188">смещение шагами на композиторе</text>
+              <text x="520" y="233">SVG, четыре полосы, морфинг под выбор</text>
+              <text x="520" y="278">гребень прибит к донцу стакана;</text>
+              <text x="520" y="292">пылинки — 26 частиц в режиме screen</text>
+            </g>
+          </svg>
+          <figcaption>
+            Порядок не декоративный: вершина обязана быть НАД стаканом (z3 &gt; z2),
+            иначе стакан висит в воздухе вместо того, чтобы стоять на горе.
+          </figcaption>
+        </figure>
+
+        <h3>Почему именно так, а не «нарисовать всё каждый кадр»</h3>
+        <div class="prose">
+          <ul>
+            <li><strong>Поле света — в ¼ разрешения.</strong> Шесть радиальных градиентов
+              на полный холст 1440×830 при dpr 2 — это ~27 млн пикселей заливки
+              за кадр, чего кадровый бюджет не выдерживает. Но свет — низкочастотный,
+              разницы на глаз нет: рисуем в четверть и растягиваем одним
+              <code>drawImage</code>.</li>
+            <li><strong>Хребты печём один раз.</strong> Силуэты строятся из fbm-шума и
+              размываются <code>ctx.filter</code>. Пересчитывать это каждый кадр
+              бессмысленно — они дрейфуют очень медленно. Плитка печётся шире
+              экрана на 300 px, а дальше просто сдвигается: получается настоящий
+              параллакс, а не имитация.</li>
+            <li><strong>Зерно — не на холсте.</strong> Плитка 170×170 генерируется один раз
+              и отдаётся CSS-слою с <code>mix-blend-mode: overlay</code>, который
+              скачками смещается по 8 позициям. Композитор делает это бесплатно.</li>
+            <li><strong>Частота шума важнее амплитуды.</strong> Первая версия давала гладкий
+              «бумажный конус»: <code>fbm(x·0,0034)</code> — это всего ~8 узлов
+              решётки на всю ширину, то есть одна длинная волна. Пришлось поднять
+              до <span class="m">0,014</span> и добавить вторую октаву на
+              <span class="m">0,058</span> — только тогда хребет стал ломаным.</li>
+            <li><strong>Вершина не дрейфует.</strong> Все хребты сдвигаются, а вершина —
+              нет: её гребень прибит к <span class="m">cupBaseY − 8</span>. Гауссиана
+              гарантирует, что пик всегда под стаканом, а fbm только его ломает.
+              Если пустить вершину в дрейф, стакан за минуту съедет с собственной горы.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="gut">Кривые<br>и время</div>
+      <div>
+        <div class="tscroll">
+          <table>
+            <caption>Движение</caption>
+            <thead><tr><th>Что</th><th class="num">Время</th><th>Кривая</th><th>Почему</th></tr></thead>
+            <tbody>
+              <tr><td>Маска экрана</td><td class="num">820 мс</td><td class="k">.32 .72 0 1</td><td>долгий вход, резкая остановка</td></tr>
+              <tr><td>Всплытие стакана</td><td class="num">1000 мс</td><td class="k">.16 1 .3 1</td><td>вес: продукт тяжёлый</td></tr>
+              <tr><td>Разлёт по дуге</td><td class="num">1050 мс</td><td class="k">1−(1−t)³</td><td>считается в JS, не в CSS</td></tr>
+              <tr><td>Заголовок, за слово</td><td class="num">900 / +90 мс</td><td class="k">.16 1 .3 1</td><td>сдвиг читается как речь</td></tr>
+              <tr><td>Доводка карусели</td><td class="num">пружина</td><td class="k">k 168, γ .0009</td><td>инерция при перетаскивании</td></tr>
+              <tr><td>Морфинг напитка</td><td class="num">≈ 700 мс</td><td class="k">1−.0035^dt</td><td>покадровая интерполяция</td></tr>
+              <tr><td>Подпись-одометр</td><td class="num">620 мс</td><td class="k">.32 .72 0 1</td><td>смена на 300 мс, в середине</td></tr>
+              <tr><td>Автопрокрутка</td><td class="num">4,2 с</td><td>—</td><td>гаснет навсегда после первого касания</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <section class="sec">
+    <h2><span class="n">09</span><span>Поведение и доступность</span></h2>
+
+    <div class="row">
+      <div class="gut">Правила</div>
+      <div class="prose">
+        <ul>
+          <li><strong>Выбор — на первом экране, в одном движении.</strong> Клик по карточке,
+            перетаскивание, горизонтальный скролл и стрелки ←→ делают одно и то же.
+            Вертикальный скролл страницы не перехватывается.</li>
+          <li><strong>Погасшая карточка не кликается.</strong> При прозрачности ниже 0,12
+            карточка получает <code>pointer-events: none</code>,
+            <code>tabindex="-1"</code> и <code>aria-hidden</code>. Иначе в табе
+            оказываются невидимые кнопки — самая частая поломка в таких карусельках.</li>
+          <li><strong>Автопрокрутка уступает человеку.</strong> Она нужна, чтобы показать,
+            что выбор вообще есть, и выключается навсегда при первом же действии.</li>
+          <li><strong>prefers-reduced-motion.</strong> Фон рисуется одним статичным кадром,
+            вступление пропускается, зерно не смещается, названия меняются без
+            сдвига. Страница остаётся полностью рабочей.</li>
+          <li><strong>Название вкуса несёт свой ореол.</strong> Подпись ложится на ту полосу,
+            которую задал рецепт, включая светлые сливки, поэтому контраст
+            обеспечивается тенью, а не расчётом на тёмный фон.</li>
+          <li><strong>Геометрия адаптивная, а не «уменьшенная».</strong> До 700 px дуга
+            уходит <strong>под</strong> стакан и раскрывается: веер вокруг стакана на
+            390 px физически сталкивается с ним.</li>
+          <li><strong>Цикл останавливается вне видимости</strong> — по
+            <code>visibilitychange</code>, чтобы не крутить кадры в фоновой вкладке.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="gut">Перенос<br>на другое<br>меню</div>
+      <div class="prose">
+        <p>
+          Система не про матчу. Чтобы поставить её на другое заведение, меняются
+          три вещи: массив <code>FLAVOURS</code> (название, слуг, цена, акцент,
+          четыре цвета полос и три доли границ), шесть рисованных марок и рампа
+          фона. Геометрия дуги, тайминги и компоненты остаются как есть.
+        </p>
+        <p>
+          Если позиций больше шести — увеличивается <span class="m">N</span>, а шаг
+          дуги уменьшается пропорционально; на дуге всё равно физически читаются
+          пять-шесть карточек, остальные уходят за край, как и в референсе.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>soen® — концепт</span>
+    <span>Референсы: kumo · tempo · lumen</span>
+    <span>Prata · Golos Text · JetBrains Mono</span>
+  </footer>
+</div>
