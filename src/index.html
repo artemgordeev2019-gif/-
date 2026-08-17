@@ -1,0 +1,1428 @@
+<title>soen Matcha Bar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+/*@FONTS@*/
+
+/* ═══════════════════════════════════════════════════════════════
+   TOKENS
+   The light palette lives on bare :root so the unstamped
+   ("system") state always resolves. Only the stage — the ground
+   the screen sits on — changes with theme; the screen itself is
+   a lit interior and stays dark in both.
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  /* core ramp, measured off the reference film */
+  --ink:       #0E1309;
+  --ink-lift:  #161D0C;
+  --forest:    #29331A;
+  --forest-hi: #3D4A26;
+  --moss:      #A3A55D;
+  --moss-dp:   #6E7440;
+  --bone:      #EDEBDD;
+  --bone-dim:  #C9C8B2;
+
+  /* backdrop ramp — read by the canvas, so the tokens are the
+     single source of truth for the artwork too */
+  --bd-wash-a: #1A2210;
+  --bd-wash-b: #2A3418;
+  --bd-wash-c: #080B04;
+  --lobe-a:    #4C5F2C;
+  --lobe-b:    #5A6F32;
+  --lobe-c:    #39491F;
+  --lobe-d:    #2F3D1A;
+  --ridge-1a:  #3A4A22;  --ridge-1b: #222C13;
+  --ridge-2a:  #2E3B1B;  --ridge-2b: #161D0C;
+  --ridge-3a:  #2A3517;  --ridge-3b: #0A0D05;
+  --ridge-4a:  #1B2310;  --ridge-4b: #070902;
+  --vignette:  #040602;
+
+  /* stage */
+  --stage:      var(--moss);
+  --stage-text: #2B2E14;
+
+  /* the accent is not a constant: the carousel writes it live */
+  --accent: #7FA03C;
+
+  --r-screen: 46px;
+  --r-card:   30px;
+  --r-pill:   999px;
+  --r-chip:   14px;
+
+  /* the screen's inner padding — measured at 35/40px on an 800px
+     frame, i.e. 4.4% of frame width */
+  --pad: clamp(18px, 4.4%, 64px);
+
+  --ease-out:  cubic-bezier(.16, 1, .3, 1);
+  --ease-soft: cubic-bezier(.32, .72, 0, 1);
+
+  --font-display: 'Prata', 'Iowan Old Style', Georgia, serif;
+  --font-ui: 'Golos', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetMono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --stage:      #0A0D07;
+    --stage-text: #8E9155;
+  }
+}
+:root[data-theme="dark"]{
+  --stage:      #0A0D07;
+  --stage-text: #8E9155;
+}
+
+*, *::before, *::after{ box-sizing: border-box; }
+
+body{
+  margin: 0;
+  background: var(--stage);
+  color: var(--stage-text);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STAGE
+   ═══════════════════════════════════════════════════════════════ */
+.stage{
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: clamp(10px, 1.6vh, 22px);
+  padding: clamp(12px, 2.2vmin, 30px);
+}
+
+.chrome{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-inline: clamp(2px, 1vw, 14px);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.chrome b{ font-weight: 700; }
+.chrome-mid{
+  flex: 0 0 auto;
+  position: relative;
+  width: 15px; height: 15px;
+  opacity: .75;
+}
+.chrome-mid::before, .chrome-mid::after{
+  content: "";
+  position: absolute;
+  background: currentColor;
+}
+.chrome-mid::before{ top: 7px; left: 0; width: 15px; height: 1px; }
+.chrome-mid::after{ top: 0; left: 7px; width: 1px; height: 15px; }
+
+/* the shell carries radius + cast shadow; the screen inside carries
+   the clip, so the intro mask can never eat the shadow */
+.shell{
+  position: relative;
+  border-radius: var(--r-screen);
+  background: var(--ink);
+  box-shadow: 0 30px 70px -30px rgba(8, 12, 4, .6);
+  min-height: 520px;
+}
+
+.screen{
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: inherit;
+  /* intro: the interior unmasks downward before anything inside moves */
+  clip-path: inset(0 0 100% 0 round var(--r-screen));
+  transition: clip-path .82s var(--ease-soft);
+}
+.is-ready .screen{ clip-path: inset(0 0 0 0 round var(--r-screen)); }
+
+.screen::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: 0 0 0 1px rgba(237, 235, 221, .11) inset;
+}
+
+.layer{ position: absolute; inset: 0; pointer-events: none; }
+#bgFar{ z-index: 0; }
+#bgNear{ z-index: 3; }
+
+/* film grain rides on the compositor, not the canvas */
+.grain{
+  position: absolute;
+  inset: -80px;
+  z-index: 1;
+  pointer-events: none;
+  opacity: .07;
+  mix-blend-mode: overlay;
+  background-repeat: repeat;
+  animation: grainShift 1.1s steps(1, end) infinite;
+}
+@keyframes grainShift{
+  0%   { transform: translate3d(0, 0, 0); }
+  12.5%{ transform: translate3d(-31px, 18px, 0); }
+  25%  { transform: translate3d(22px, -37px, 0); }
+  37.5%{ transform: translate3d(-44px, -11px, 0); }
+  50%  { transform: translate3d(13px, 41px, 0); }
+  62.5%{ transform: translate3d(38px, 7px, 0); }
+  75%  { transform: translate3d(-17px, -29px, 0); }
+  87.5%{ transform: translate3d(29px, 33px, 0); }
+}
+
+/* ── top bar ──────────────────────────────────────────────── */
+.top{
+  position: absolute;
+  z-index: 6;
+  inset: var(--pad) var(--pad) auto;
+  /* three tracks so the pill is centred on the screen, not on
+     whatever is left over after the wordmark */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 14px;
+}
+.top .icon-btn{ justify-self: end; }
+.top > *{
+  opacity: 0;
+  transform: translateY(-9px);
+  transition:
+    opacity .6s var(--ease-out) var(--d, 0ms),
+    transform .6s var(--ease-out) var(--d, 0ms);
+}
+.is-ready .top > *{ opacity: 1; transform: none; }
+
+.mark{
+  font-family: var(--font-display);
+  font-size: clamp(19px, 1.7vw, 27px);
+  line-height: 1;
+  letter-spacing: -.005em;
+  color: var(--bone);
+  text-decoration: none;
+}
+.mark sup{
+  font-family: var(--font-ui);
+  font-size: .34em;
+  font-weight: 600;
+  vertical-align: super;
+  margin-left: .12em;
+  opacity: .8;
+}
+
+.pill{
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--r-pill);
+  background: rgba(237, 235, 221, .13);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: 0 0 0 1px rgba(237, 235, 221, .10) inset;
+}
+.pill button{
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  width: 34px; height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--bone);
+  transition: background .35s var(--ease-out), color .35s var(--ease-out);
+}
+.pill button:hover{ background: rgba(237, 235, 221, .17); }
+.pill button[aria-current="true"]{ background: var(--bone); color: var(--ink); }
+.pill svg{ display: block; width: 15px; height: 15px; }
+
+.icon-btn{
+  flex: 0 0 auto;
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  width: 42px; height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: rgba(237, 235, 221, .13);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 0 0 1px rgba(237, 235, 221, .10) inset;
+  color: var(--bone);
+  transition: background .35s var(--ease-out);
+}
+.icon-btn:hover{ background: rgba(237, 235, 221, .21); }
+.icon-btn svg{ width: 15px; height: 15px; }
+
+/* ── the wheel ────────────────────────────────────────────── */
+.ring{
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  touch-action: pan-y;
+  cursor: grab;
+}
+.ring.is-dragging{ cursor: grabbing; }
+
+.fcard{
+  position: absolute;
+  left: 50%; top: 50%;
+  width: var(--card-size, 168px);
+  height: var(--card-size, 168px);
+  margin: calc(var(--card-size, 168px) / -2);
+  appearance: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  border-radius: var(--r-card);
+  background: linear-gradient(168deg, #F4F2E6 0%, var(--bone) 48%, #DEDCCB 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, .7) inset,
+    0 22px 34px -18px rgba(6, 9, 4, .72),
+    0 4px 10px -4px rgba(6, 9, 4, .45);
+  display: grid;
+  place-items: center;
+  /* JS writes --x --y --rot --sc --op each frame */
+  transform:
+    translate3d(var(--x, 0px), var(--y, 0px), 0)
+    rotate(var(--rot, 0deg))
+    scale(var(--sc, 1));
+  opacity: var(--op, 1);
+  will-change: transform, opacity;
+}
+.fcard::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(150deg, rgba(255,255,255,.55), rgba(255,255,255,0) 46%);
+  mix-blend-mode: soft-light;
+}
+.fcard svg{
+  width: 58%; height: 58%;
+  overflow: visible;
+  transition: transform .5s var(--ease-out);
+}
+.fcard:hover svg{ transform: scale(1.09) rotate(-3deg); }
+.fcard:focus-visible{ outline: 2px solid var(--bone); outline-offset: 5px; }
+
+/* ── the cup, in the wheel's empty centre slot ─────────────── */
+.cupwrap{
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: var(--cup-top, 20%);
+  width: var(--cup-w, 300px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.cup{
+  display: block;
+  width: 100%; height: auto;
+  filter: drop-shadow(0 26px 30px rgba(5, 8, 3, .6));
+  opacity: 0;
+  transform: translateY(26px) scale(.9);
+  transition:
+    opacity .8s var(--ease-out) 260ms,
+    transform 1s var(--ease-out) 260ms;
+}
+.is-ready .cup{ opacity: 1; transform: none; }
+
+/* the name is clipped by the cup's own width — that is what makes
+   the half-word states as the wheel turns */
+.namewin{
+  position: absolute;
+  left: 50%;
+  bottom: 20%;
+  width: 104%;
+  transform: translateX(-50%);
+  overflow: hidden;
+  text-align: center;
+  opacity: 0;
+  transition: opacity .7s var(--ease-out) 660ms;
+}
+.is-ready .namewin{ opacity: 1; }
+.namewin b{
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(20px, 2.5vw, 40px);
+  line-height: 1.05;
+  white-space: nowrap;
+  color: #FBFAF2;
+  /* the label crosses whichever band the recipe puts under it, cream
+     included, so it carries its own halo rather than relying on the drink */
+  text-shadow:
+    0 1px 2px rgba(6, 9, 4, .55),
+    0 2px 14px rgba(6, 9, 4, .9),
+    0 0 34px rgba(6, 9, 4, .7);
+  transform: translateX(var(--slide, 0%));
+  transition: transform .62s var(--ease-soft);
+}
+.namewin i{
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: clamp(8px, .72vw, 10.5px);
+  font-weight: 500;
+  letter-spacing: .2em;
+  white-space: nowrap;
+  color: rgba(251, 250, 242, .78);
+  text-shadow: 0 1px 10px rgba(6, 9, 4, .9);
+  transform: translateX(var(--slide, 0%));
+  transition: transform .62s var(--ease-soft) 40ms;
+}
+
+/* ── price chip, on the peak and above the near layer ──────── */
+.chip{
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: var(--chip-top, 60%);
+  transform: translateX(-50%);
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 10px 14px 11px;
+  border: 0;
+  border-radius: var(--r-chip);
+  cursor: pointer;
+  background: linear-gradient(180deg, #F5F3E7, var(--bone));
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, .8) inset,
+    0 16px 26px -14px rgba(6, 9, 4, .75);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  opacity: 0;
+  transition:
+    opacity .5s var(--ease-out) 940ms,
+    box-shadow .35s var(--ease-out);
+}
+.is-ready .chip{ opacity: 1; }
+.chip:hover{
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, .8) inset,
+    0 20px 30px -12px rgba(6, 9, 4, .8),
+    0 0 0 2px var(--accent);
+}
+.chip:focus-visible{ outline: 2px solid var(--bone); outline-offset: 4px; }
+.chip .cart{
+  display: grid;
+  place-items: center;
+  width: 20px; height: 20px;
+  border-radius: 7px;
+  background: #DFDDCA;
+  background: color-mix(in oklab, var(--accent) 34%, #E4E2D0);
+  transition: background .5s var(--ease-out);
+}
+.chip .cart svg{ width: 12px; height: 12px; }
+
+/* ── headline ─────────────────────────────────────────────── */
+.headline{
+  position: absolute;
+  z-index: 5;
+  inset: auto var(--pad) calc(var(--pad) * .78);
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(28px, 6.6vw, 96px);
+  line-height: 1.0;
+  letter-spacing: -.018em;
+  color: #F4F2E4;
+  text-wrap: balance;
+  text-shadow: 0 4px 40px rgba(6, 9, 4, .5);
+}
+.headline span{
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  /* the mask must clear the descenders, or Prata's р/у get sliced */
+  padding: .16em .04em .22em;
+  margin: -.16em -.04em -.22em;
+}
+.headline i{
+  display: inline-block;
+  font-style: normal;
+  transform: translateY(106%);
+  transition: transform .9s var(--ease-out) var(--d, 0ms);
+}
+.is-ready .headline i{ transform: none; }
+
+/* ── rail ─────────────────────────────────────────────────── */
+.rail{
+  position: absolute;
+  z-index: 6;
+  left: var(--pad);
+  bottom: calc(var(--pad) * .26);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: rgba(237, 235, 221, .55);
+  opacity: 0;
+  transition: opacity .6s var(--ease-out) 1040ms;
+}
+.is-ready .rail{ opacity: 1; }
+.rail .dots{ display: flex; gap: 5px; }
+.rail .dots i{
+  width: 5px; height: 5px;
+  border-radius: 999px;
+  background: rgba(237, 235, 221, .28);
+  transition: background .4s var(--ease-out), width .4s var(--ease-out);
+}
+.rail .dots i[data-on="1"]{ width: 17px; background: var(--accent); }
+
+@media (max-width: 900px){
+  .pill{ display: none; }
+  .headline{ inset: auto 14px calc(var(--pad) * .9); font-size: clamp(28px, 8.4vw, 62px); }
+  .rail{
+    left: 50%;
+    bottom: calc(var(--pad) * .34);
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+}
+@media (max-width: 700px){
+  :root{ --r-screen: 30px; --pad: clamp(16px, 6%, 30px); }
+  /* the arc moves below the cup on narrow screens, so the name has to
+     clear it rather than sit inside the fan */
+  .namewin{ bottom: 33%; }
+  /* one line only: the numeral and the dots. The instruction is dropped
+     rather than allowed to wrap into three lines. */
+  .rail span:last-child{ display: none; }
+  .chrome{ font-size: 9px; letter-spacing: .09em; }
+  .chrome span:last-child{ display: none; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .screen, .cup, .namewin, .namewin b, .namewin i,
+  .chip, .rail, .top > *, .headline i, .fcard svg{
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+  .grain{ animation: none; }
+}
+</style>
+
+<div class="stage">
+  <div class="chrome">
+    <span><b>soen</b> — matcha bar / hero concept</span>
+    <span class="chrome-mid" aria-hidden="true"></span>
+    <span>выбор на первом экране</span>
+  </div>
+
+  <div class="shell">
+    <main class="screen" id="screen">
+      <canvas class="layer" id="bgFar" aria-hidden="true"></canvas>
+      <div class="grain" id="grain" aria-hidden="true"></div>
+      <canvas class="layer" id="bgNear" aria-hidden="true"></canvas>
+
+      <header class="top">
+        <a class="mark" href="#" style="--d:940ms">soen<sup>®</sup></a>
+
+        <nav class="pill" aria-label="Разделы" style="--d:1000ms">
+          <button type="button" aria-label="Меню">
+            <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1.6"/><rect x="9" y="1" width="6" height="6" rx="1.6"/><rect x="1" y="9" width="6" height="6" rx="1.6"/><rect x="9" y="9" width="6" height="6" rx="1.6"/></svg>
+          </button>
+          <button type="button" aria-label="Доставка">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="3.5" width="13" height="10" rx="2.2"/><path d="M1.5 6.6h13"/></svg>
+          </button>
+          <button type="button" aria-label="О матче">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.3"/><circle cx="8" cy="8" r="2.3"/><path d="M14.3 8v2.2a2 2 0 0 1-4 0"/></svg>
+          </button>
+          <button type="button" aria-label="Соцсети">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 2.5l11 11M13.5 2.5l-11 11"/></svg>
+          </button>
+          <button type="button" aria-current="true" aria-label="Корзина">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.6 2.2h1.9l1.9 8.1h7.3"/><path d="M4.6 4.6h9.8l-1.3 4.4H5.6"/><circle cx="6.4" cy="13.2" r="1.2"/><circle cx="12" cy="13.2" r="1.2"/></svg>
+          </button>
+        </nav>
+
+        <button class="icon-btn" type="button" aria-label="Найти кофейню" style="--d:1060ms">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 14.5s5-4.4 5-8a5 5 0 0 0-10 0c0 3.6 5 8 5 8Z"/><circle cx="8" cy="6.4" r="1.9"/></svg>
+        </button>
+      </header>
+
+      <div class="cupwrap">
+        <svg class="cup" viewBox="0 0 300 430" role="img" aria-labelledby="cupTitle">
+          <title id="cupTitle">Стакан матча — состав меняется вместе с выбором</title>
+          <defs>
+            <clipPath id="cupBody">
+              <path d="M4 26 L40 404 A110 17 0 0 0 260 404 L296 26 A146 21 0 0 1 4 26 Z"/>
+            </clipPath>
+            <linearGradient id="glass" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0"   stop-color="#fff" stop-opacity=".40"/>
+              <stop offset=".13" stop-color="#fff" stop-opacity=".05"/>
+              <stop offset=".46" stop-color="#fff" stop-opacity="0"/>
+              <stop offset=".80" stop-color="#fff" stop-opacity=".07"/>
+              <stop offset=".95" stop-color="#fff" stop-opacity=".34"/>
+            </linearGradient>
+            <linearGradient id="rimG" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0"  stop-color="#fff" stop-opacity=".55"/>
+              <stop offset=".5" stop-color="#fff" stop-opacity=".16"/>
+              <stop offset="1"  stop-color="#fff" stop-opacity=".5"/>
+            </linearGradient>
+            <!-- the drink is poured, not printed: softening the band edges
+                 is what makes the layers read as liquid meeting liquid -->
+            <filter id="soften" x="-20%" y="-10%" width="140%" height="120%">
+              <feGaussianBlur stdDeviation="3.6"/>
+            </filter>
+            <linearGradient id="shade" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0"   stop-color="#000" stop-opacity=".34"/>
+              <stop offset=".24" stop-color="#000" stop-opacity="0"/>
+              <stop offset=".76" stop-color="#000" stop-opacity="0"/>
+              <stop offset="1"   stop-color="#000" stop-opacity=".40"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Layers are stacked so each band's own colour bulges DOWN into
+               the one beneath it: that downward ellipse is what a liquid
+               boundary looks like through a round cup, and it is the single
+               detail that stops the drink reading as flat stripes. -->
+          <g clip-path="url(#cupBody)">
+            <!-- rects run wider than the cup so the blur never thins the
+                 colour against the left and right walls -->
+            <g filter="url(#soften)">
+              <rect    id="bandA" x="-40" y="0"   width="380" height="430" fill="#4E6B23"/>
+              <rect    id="bandB" x="-40" y="150" width="380" height="280" fill="#F0EFE1"/>
+              <ellipse id="surfA" cx="150" cy="150" rx="134" ry="19" fill="#4E6B23"/>
+              <rect    id="bandC" x="-40" y="230" width="380" height="200" fill="#EFEEE0"/>
+              <ellipse id="surfB" cx="150" cy="230" rx="127" ry="18" fill="#5C7A24"/>
+              <rect    id="bandD" x="-40" y="300" width="380" height="130" fill="#93A855"/>
+              <ellipse id="surfC" cx="150" cy="300" rx="120" ry="17" fill="#EFEEE0"/>
+              <!-- the drink's own surface, just under the rim -->
+              <ellipse id="surfTop" cx="150" cy="35" rx="145" ry="20" fill="#6C8A34"/>
+            </g>
+            <g id="ice" fill="#fff" opacity=".3"></g>
+            <ellipse cx="150" cy="404" rx="110" ry="17" fill="#05070A" opacity=".3"/>
+            <rect x="0" y="0" width="300" height="430" fill="url(#shade)"/>
+            <rect x="0" y="0" width="300" height="430" fill="url(#glass)"/>
+          </g>
+
+          <ellipse cx="150" cy="26" rx="146" ry="21" fill="#fff" opacity=".05"/>
+          <ellipse cx="150" cy="26" rx="146" ry="21" fill="none" stroke="url(#rimG)" stroke-width="3.4"/>
+          <path d="M4 26 L40 404 A110 17 0 0 0 260 404 L296 26"
+                fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="1.6"/>
+        </svg>
+
+        <div class="namewin" id="namewin" aria-live="polite">
+          <b id="fName">Классика</b>
+          <i id="fSlug">[ MATCHA_ORIGIN ]</i>
+        </div>
+      </div>
+
+      <button class="chip" id="chip" type="button">
+        <span id="price">380 ₽</span>
+        <span class="cart" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3.4v9.2M3.4 8h9.2"/></svg>
+        </span>
+      </button>
+
+      <div class="ring" id="ring"></div>
+
+      <h1 class="headline">
+        <span><i style="--d:740ms">Выберите</i></span>
+        <span><i style="--d:830ms">свой</i></span>
+        <span><i style="--d:920ms">вкус</i></span>
+      </h1>
+
+      <div class="rail">
+        <span id="railLabel">01 / 06</span>
+        <span class="dots" id="dots" aria-hidden="true"></span>
+        <span>тяните или кликните</span>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ═══════════════════════════════════════════════════════════
+     1. MENU
+     Each flavour carries its own accent and its own liquid
+     recipe, so choosing genuinely rewrites the page's colour.
+     ═══════════════════════════════════════════════════════════ */
+  /* Four bands, top to bottom: matcha cap → the flavour → cream → matcha
+     base. Every drink therefore opens and closes on matcha, which keeps
+     the range coherent and stops three-band recipes from reading as
+     accidental tricolour flags. */
+  const FLAVOURS = [
+    { name:"Классика",  slug:"MATCHA_ORIGIN",   price:"380 ₽", accent:"#7FA03C",
+      bands:["#3E5A18","#5C7A24","#EFEEE0","#93A855"], split:[.26,.62,.76] },
+    { name:"Земляника", slug:"WILD_STRAWBERRY", price:"460 ₽", accent:"#DE6472",
+      bands:["#3E5A18","#D5455C","#F0E6E2","#8FA553"], split:[.24,.60,.74] },
+    { name:"Голубика",  slug:"BLUEBERRY_HAZE",  price:"470 ₽", accent:"#5A6AB4",
+      bands:["#3E5A18","#4C5AA6","#E9E8F0","#8FA553"], split:[.26,.61,.75] },
+    { name:"Клюква",    slug:"CRANBERRY_CUT",   price:"450 ₽", accent:"#A82749",
+      bands:["#3E5A18","#8E1F3E","#EEE7E5","#8FA553"], split:[.22,.64,.78] },
+    { name:"Генмайча",  slug:"GENMAICHA_ROAST", price:"420 ₽", accent:"#C08A3E",
+      bands:["#47611F","#B9863C","#F0EAD9","#96A957"], split:[.28,.58,.73] },
+    { name:"Юдзу",      slug:"YUZU_COLD_BREW",  price:"490 ₽", accent:"#D9B429",
+      bands:["#3E5A18","#CFAE33","#F3F0DC","#93A855"], split:[.25,.59,.74] },
+  ];
+  const N = FLAVOURS.length;
+
+  /* Fruit marks are drawn, not photographed, so the set reads as
+     one family on the card faces. Each is a scene on a 100×100 field. */
+  const MARKS = [
+    /* tea leaf — one strong silhouette with a shaded half and a midrib */
+    `<g><path d="M50 10c23 15 31 46 19 69-4 9-13 13-19 13s-15-4-19-13C19 56 27 25 50 10Z" fill="#87A845"/>
+       <path d="M50 10c23 15 31 46 19 69-4 9-13 13-19 13Z" fill="#6E8F31"/>
+       <path d="M50 13v78" stroke="#3B4F1E" stroke-width="3.2" stroke-linecap="round"/>
+       <g stroke="#3B4F1E" stroke-width="2.3" fill="none" opacity=".65" stroke-linecap="round">
+         <path d="M50 33c8 4 13 10 15 17"/><path d="M50 33c-8 4-13 10-15 17"/>
+         <path d="M50 53c7 4 11 9 13 15"/><path d="M50 53c-7 4-11 9-13 15"/>
+       </g></g>`,
+    `<g><path d="M50 88C33 78 22 63 22 47c0-9 7-14 14-11 4 2 9 2 14 0 5-2 10-2 14 0 7 3 14-2 14 11 0 16-11 31-28 41Z" fill="#D8314A"/>
+       <path d="M50 88C33 78 22 63 22 47c0-9 7-14 14-11 4 2 9 2 14 0v52Z" fill="#B92038"/>
+       <g fill="#F4E9C6"><circle cx="38" cy="52" r="2.6"/><circle cx="52" cy="47" r="2.6"/><circle cx="63" cy="57" r="2.6"/><circle cx="45" cy="67" r="2.6"/><circle cx="58" cy="72" r="2.6"/></g>
+       <path d="M50 34c-6-9-16-12-24-11 3 8 12 13 24 11Z" fill="#4E7A28"/>
+       <path d="M50 34c6-9 16-12 24-11-3 8-12 13-24 11Z" fill="#63913A"/>
+       <path d="M50 34V19" stroke="#4E7A28" stroke-width="4.5" stroke-linecap="round"/></g>`,
+    /* blueberries — a cluster of three, calyx star on the front berry */
+    `<g><circle cx="31" cy="64" r="17" fill="#3B4A90"/>
+       <circle cx="69" cy="66" r="15" fill="#43539E"/>
+       <circle cx="50" cy="45" r="20" fill="#556AC0"/>
+       <ellipse cx="41" cy="36" rx="7" ry="4.8" fill="#96A3DE" opacity=".72"/>
+       <ellipse cx="25" cy="57" rx="5" ry="3.4" fill="#8290D2" opacity=".5"/>
+       <circle cx="50" cy="45" r="5.6" fill="#2F3C7B"/>
+       <g stroke="#2F3C7B" stroke-width="2.3" stroke-linecap="round">
+         <path d="M50 39.4v-4"/><path d="M55.6 45h4"/><path d="M44.4 45h-4"/>
+         <path d="M54 41l2.8-2.8"/><path d="M46 41l-2.8-2.8"/><path d="M50 50.6v3.4"/>
+       </g></g>`,
+    `<g><g stroke="#5C8A2E" stroke-width="4.5" stroke-linecap="round" fill="none">
+         <path d="M52 16c-10 12-14 24-16 34"/><path d="M52 16c4 14 12 24 20 30"/></g>
+       <circle cx="34" cy="60" r="18" fill="#A81E3C"/>
+       <circle cx="34" cy="60" r="18" fill="none" stroke="#7C1029" stroke-width="2.6"/>
+       <circle cx="68" cy="66" r="15" fill="#C22748"/>
+       <circle cx="68" cy="66" r="15" fill="none" stroke="#7C1029" stroke-width="2.6"/>
+       <ellipse cx="28" cy="53" rx="5.5" ry="4" fill="#E07189" opacity=".7"/></g>`,
+    /* genmaicha — toasted rice grains and one popped kernel, plus leaf */
+    `<g><g fill="#E0C88A" stroke="#A2803B" stroke-width="2.2" stroke-linejoin="round">
+         <rect x="17" y="57" width="28" height="13" rx="6.5" transform="rotate(-17 31 63.5)"/>
+         <rect x="49" y="68" width="30" height="13" rx="6.5" transform="rotate(13 64 74.5)"/>
+         <rect x="31" y="80" width="26" height="12" rx="6" transform="rotate(-5 44 86)"/>
+       </g>
+       <path d="M62 42c7-7 19-6 22 3 4 10-4 18-13 17-11-1-16-12-9-20Z"
+             fill="#F7EFD6" stroke="#C4A467" stroke-width="2.2"/>
+       <path d="M43 46C38 32 26 24 11 24c3 17 16 27 32 22Z" fill="#537F29"/>
+       <path d="M46 43c2-11 11-19 24-21-1 13-10 21-24 21Z" fill="#74A63C"/></g>`,
+    /* yuzu — a cut half, so the segments carry the recognition */
+    `<g><circle cx="50" cy="57" r="31" fill="#E4C64F"/>
+       <circle cx="50" cy="57" r="31" fill="none" stroke="#A8871A" stroke-width="3"/>
+       <circle cx="50" cy="57" r="25" fill="#F7EEB6"/>
+       <g fill="#F3DE6B" stroke="#D6B92E" stroke-width="1.6">
+         <ellipse cx="50" cy="43" rx="7.4" ry="11" transform="rotate(0 50 57)"/>
+         <ellipse cx="50" cy="43" rx="7.4" ry="11" transform="rotate(60 50 57)"/>
+         <ellipse cx="50" cy="43" rx="7.4" ry="11" transform="rotate(120 50 57)"/>
+         <ellipse cx="50" cy="43" rx="7.4" ry="11" transform="rotate(180 50 57)"/>
+         <ellipse cx="50" cy="43" rx="7.4" ry="11" transform="rotate(240 50 57)"/>
+         <ellipse cx="50" cy="43" rx="7.4" ry="11" transform="rotate(300 50 57)"/>
+       </g>
+       <circle cx="50" cy="57" r="3.6" fill="#E7D267"/>
+       <path d="M52 27c8-9 19-11 28-9-4 10-15 14-28 9Z" fill="#5C8A2E"/></g>`,
+  ];
+
+  /* ═══════════════════════════════════════════════════════════
+     2. WHEEL GEOMETRY — reverse-engineered from the reference.
+     Cards ride a circle whose centre sits far above the screen,
+     so they fan out and dip as they travel outward. The slot at
+     angle 0 is deliberately empty: that is where the cup stands,
+     and the selected flavour pours into it instead of showing
+     a card.
+     ═══════════════════════════════════════════════════════════ */
+  const GEO = {
+    rotDamp: 0.65,    // tangent rotation, softened so cards stay readable
+    scaleFall: 0.055,
+    /* Wide screens fan the cards AROUND the cup, as the reference does.
+       Narrow screens have no room for that — the fan would collide with
+       the cup — so the arc moves BELOW it and opens up. The idea survives:
+       the choice is still on the first screen, in one gesture. */
+    wide: {
+      ref: 1440, radius: 900, step: 0.314,
+      ringY: 0.445, cupY: 0.445, card: 168, cupPct: 0.30,
+      summitHalf: 0.30, summitDrop: 0.42,
+    },
+    narrow: {
+      ref: 430, radius: 300, step: 0.34,
+      ringY: 0.735, cupY: 0.335, card: 104, cupPct: 0.46,
+      summitHalf: 0.62, summitDrop: 0.26,
+    },
+  };
+
+  const screen  = document.getElementById("screen");
+  const ring    = document.getElementById("ring");
+  const dotsEl  = document.getElementById("dots");
+  const railLbl = document.getElementById("railLabel");
+  const nameEl  = document.getElementById("fName");
+  const slugEl  = document.getElementById("fSlug");
+  const priceEl = document.getElementById("price");
+  const namewin = document.getElementById("namewin");
+  const chipEl  = document.getElementById("chip");
+  const bandEls = ["bandA", "bandB", "bandC", "bandD"].map(id => document.getElementById(id));
+  const surfEls = ["surfA", "surfB", "surfC"].map(id => document.getElementById(id));
+  const surfTop = document.getElementById("surfTop");
+
+  /* the cup tapers, so a liquid surface at depth y has its own radius */
+  const RIM_Y = 26, BASE_Y = 404, RIM_RX = 146, BASE_RX = 110;
+  const rxAt = y => RIM_RX + (BASE_RX - RIM_RX) * ((y - RIM_Y) / (BASE_Y - RIM_Y));
+  /* the rim's own ry:rx, opened up a little because glass magnifies the
+     curve of a boundary seen through the far wall of the cup */
+  const ELLIPSE_RATIO = (21 / 146) * 1.32;
+
+  const css = getComputedStyle(document.documentElement);
+  const tok = n => css.getPropertyValue(n).trim();
+
+  /* palette read from the tokens, so the artwork and the CSS agree */
+  const PAL = {
+    washA: tok("--bd-wash-a"), washB: tok("--bd-wash-b"), washC: tok("--bd-wash-c"),
+    lobes: [tok("--lobe-a"), tok("--lobe-b"), tok("--lobe-c"), tok("--lobe-d")],
+    ridges: [
+      [tok("--ridge-1a"), tok("--ridge-1b")],
+      [tok("--ridge-2a"), tok("--ridge-2b")],
+      [tok("--ridge-3a"), tok("--ridge-3b")],
+      [tok("--ridge-4a"), tok("--ridge-4b")],
+    ],
+    vignette: tok("--vignette"),
+  };
+
+  const hexToRgb = h => [
+    parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16),
+  ];
+  const rgbCss = c => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
+  const rgba   = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+  const lerp   = (a, b, t) => a + (b - a) * t;
+  const lerpC  = (a, b, t) => [lerp(a[0],b[0],t), lerp(a[1],b[1],t), lerp(a[2],b[2],t)];
+  const mod    = (n, m) => ((n % m) + m) % m;
+  /* shortest signed distance around the wheel */
+  const wrapDelta = (a, b) => {
+    let d = mod(b - a, N);
+    if (d > N / 2) d -= N;
+    return d;
+  };
+
+  /* build cards + rail dots */
+  const cards = FLAVOURS.map((f, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "fcard";
+    b.dataset.i = String(i);
+    b.setAttribute("aria-label", `${f.name} — ${f.price}`);
+    b.innerHTML = `<svg viewBox="0 0 100 100" aria-hidden="true">${MARKS[i]}</svg>`;
+    ring.appendChild(b);
+    return b;
+  });
+  FLAVOURS.forEach(() => dotsEl.appendChild(document.createElement("i")));
+  const dots = [...dotsEl.children];
+
+  /* ice and condensation live in the top band and are placed once.
+     Kept faint — legible as ice, never as white squares. */
+  document.getElementById("ice").innerHTML = [
+    [98, 92, 30, -12], [176, 78, 25, 14], [136, 128, 21, 24], [208, 122, 18, -18],
+  ].map(([x, y, s, r]) => {
+    const c = `${x + s / 2} ${y + s / 2}`;
+    return `<g transform="rotate(${r} ${c})">
+      <rect x="${x}" y="${y}" width="${s}" height="${s}" rx="${s * .3}" opacity=".13"/>
+      <rect x="${x}" y="${y}" width="${s}" height="${s}" rx="${s * .3}" fill="none"
+            stroke="#fff" stroke-opacity=".2" stroke-width="1.4"/>
+      <rect x="${x + s * .16}" y="${y + s * .14}" width="${s * .34}" height="${s * .2}"
+            rx="${s * .1}" opacity=".22"/></g>`;
+  }).join("") + [
+    [118, 196, 4], [188, 232, 3], [92, 258, 3.4], [206, 300, 2.6], [140, 330, 3],
+  ].map(([x, y, r]) =>
+    `<circle cx="${x}" cy="${y}" r="${r}" opacity=".14"/>`).join("");
+
+  /* ═══════════════════════════════════════════════════════════
+     3. STATE
+     ═══════════════════════════════════════════════════════════ */
+  const st = {
+    pos: 0, target: 0, vel: 0,
+    L: GEO.wide,
+    intro: reduced ? 1 : 0,
+    selected: 0,
+    bands: FLAVOURS[0].bands.map(hexToRgb),
+    split: [...FLAVOURS[0].split],
+    accent: hexToRgb(FLAVOURS[0].accent),
+    dragging: false,
+    userTouched: reduced,
+    w: 0, h: 0, scale: 1,
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     4. SIZING
+     Every distance is expressed against a 1440px reference width
+     and then scaled, so the composition holds at any size.
+     ═══════════════════════════════════════════════════════════ */
+  function measure(){
+    const r = screen.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    st.w = r.width;
+    st.h = r.height;
+
+    const L = st.L = r.width < 700 ? GEO.narrow : GEO.wide;
+    st.scale = Math.min(1.35, Math.max(.42, r.width / L.ref));
+
+    screen.style.setProperty("--card-size", Math.round(L.card * st.scale) + "px");
+
+    /* bounded by width AND height — a short viewport must not hand the cup
+       the whole screen and push the headline off the bottom */
+    const cupW = Math.round(Math.min(
+      300 * st.scale * 1.02, r.width * L.cupPct, r.height * .39));
+    const cupH = cupW * (430 / 300);
+    /* on short viewports the cup would run past the headline, so cap it */
+    const cupTop = Math.max(
+      r.height * .07,
+      Math.min(r.height * L.cupY - cupH * .52, r.height - cupH - r.height * .2));
+    st.cupBaseY = cupTop + cupH * .94;   // the summit's crest is pinned here
+    screen.style.setProperty("--cup-w", cupW + "px");
+    screen.style.setProperty("--cup-top", Math.round(cupTop) + "px");
+    screen.style.setProperty("--chip-top", Math.round(cupTop + cupH * .99) + "px");
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     5. WHEEL RENDER
+     ═══════════════════════════════════════════════════════════ */
+  function layoutCards(t){
+    const L = st.L;
+    const R = L.radius * st.scale;
+    const dy = st.h * (L.ringY - .5);
+
+    for (let i = 0; i < N; i++){
+      const slot  = wrapDelta(st.pos, i);
+      const theta = slot * L.step;
+
+      const x = Math.sin(theta) * R * t;
+      const y = (1 - Math.cos(theta)) * R * t;
+
+      const dist = Math.abs(slot);
+      const sc = (1 - dist * GEO.scaleFall) * lerp(.24, 1, t);
+
+      /* the centre slot belongs to the cup: fade that card out */
+      const centre = Math.max(0, 1 - dist / .92);
+      const edge   = Math.max(0, Math.min(1, (N / 2 - dist) / .85));
+      const op = (1 - centre) * edge * t;
+
+      const s = cards[i].style;
+      s.setProperty("--x", x.toFixed(2) + "px");
+      s.setProperty("--y", (y + dy).toFixed(2) + "px");
+      s.setProperty("--rot", (theta * GEO.rotDamp * 180 / Math.PI).toFixed(2) + "deg");
+      s.setProperty("--sc", sc.toFixed(3));
+      s.setProperty("--op", op.toFixed(3));
+      s.zIndex = String(40 - Math.round(dist * 10));
+
+      /* a faded card must not be clickable or a tab stop */
+      const live = op >= .12;
+      s.pointerEvents = live ? "auto" : "none";
+      cards[i].tabIndex = live ? 0 : -1;
+      cards[i].setAttribute("aria-hidden", live ? "false" : "true");
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     6. CHOOSING — rewrites liquid, accent, price and label
+     ═══════════════════════════════════════════════════════════ */
+  let slideTimer = 0;
+
+  function select(i, { fromUser = true } = {}){
+    i = mod(Math.round(i), N);
+    const changed = i !== st.selected;
+    st.selected = i;
+    st.target = st.pos + wrapDelta(st.pos, i);
+    if (fromUser) st.userTouched = true;
+
+    const f = FLAVOURS[i];
+    screen.style.setProperty("--accent", f.accent);
+    priceEl.textContent = f.price;
+    railLbl.textContent =
+      `${String(i + 1).padStart(2, "0")} / ${String(N).padStart(2, "0")}`;
+    dots.forEach((d, k) => d.dataset.on = k === i ? "1" : "0");
+    cards.forEach((c, k) => c.setAttribute("aria-pressed", String(k === i)));
+
+    if (!changed) return;
+
+    if (reduced){
+      nameEl.textContent = f.name;
+      slugEl.textContent = `[ ${f.slug} ]`;
+      return;
+    }
+    /* the name slides out, swaps, and slides back in — this is what
+       produces the clipped half-words mid-transition */
+    clearTimeout(slideTimer);
+    namewin.style.setProperty("--slide", "-62%");
+    slideTimer = setTimeout(() => {
+      nameEl.textContent = f.name;
+      slugEl.textContent = `[ ${f.slug} ]`;
+      namewin.style.transition = "none";
+      namewin.style.setProperty("--slide", "62%");
+      requestAnimationFrame(() => {
+        namewin.style.transition = "";
+        namewin.style.setProperty("--slide", "0%");
+      });
+    }, 300);
+  }
+
+  /* liquid is tweened toward the selection, never snapped */
+  function paintLiquid(dt){
+    const f = FLAVOURS[st.selected];
+    const k = reduced ? 1 : 1 - Math.pow(.0035, dt);
+    const tgt = f.bands.map(hexToRgb);
+    for (let i = 0; i < 4; i++) st.bands[i] = lerpC(st.bands[i], tgt[i], k);
+    for (let i = 0; i < 3; i++) st.split[i] = lerp(st.split[i], f.split[i], k);
+    st.accent = lerpC(st.accent, hexToRgb(f.accent), k);
+
+    /* the cup interior spans y 26 → 404 in the SVG's own units */
+    const H = BASE_Y - RIM_Y;
+    const cols = st.bands.map(rgbCss);
+
+    /* Band A is the full ground. Each later band is laid over everything
+       from its own boundary downward, then the colour ABOVE that boundary
+       is stamped back as an ellipse — so every boundary bulges downward,
+       which is how a liquid line looks through a round cup. */
+    bandEls[0].setAttribute("fill", cols[0]);
+
+    for (let i = 0; i < 3; i++){
+      const y = RIM_Y + H * st.split[i];
+      bandEls[i + 1].setAttribute("y", y.toFixed(1));
+      bandEls[i + 1].setAttribute("height", (430 - y).toFixed(1));
+      bandEls[i + 1].setAttribute("fill", cols[i + 1]);
+
+      const rx = rxAt(y) * .92;
+      surfEls[i].setAttribute("cy", y.toFixed(1));
+      surfEls[i].setAttribute("rx", rx.toFixed(1));
+      surfEls[i].setAttribute("ry", (rx * ELLIPSE_RATIO).toFixed(1));
+      surfEls[i].setAttribute("fill", cols[i]);
+    }
+
+    /* the drink's own surface reads a shade lighter than the body */
+    surfTop.setAttribute("fill", rgbCss(lerpC(st.bands[0], [255, 255, 255], .16)));
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     7. BACKDROP
+     No photography. Three procedural strata:
+       · light field — four drifting lobes + the flavour bloom,
+         rendered at quarter scale and upscaled (it is all low
+         frequency, so the resolution is free)
+       · ridges — fbm silhouettes baked once per resize into wide
+         offscreen tiles, then translated for real parallax drift
+       · grain — a CSS layer on the compositor, not the canvas
+     ═══════════════════════════════════════════════════════════ */
+  const far  = document.getElementById("bgFar");
+  const near = document.getElementById("bgNear");
+  const fx = far.getContext("2d");
+  const nx = near.getContext("2d");
+
+  const lightCv = document.createElement("canvas");
+  const lightCx = lightCv.getContext("2d");
+  const vigCv   = document.createElement("canvas");
+  const LIGHT_DIV = 4;
+  const DRIFT = 300;              // how far a ridge tile can travel
+  let ridges = [];                // 4 baked offscreen tiles
+  let dpr = 1;
+
+  /* value noise + fbm: cheap, smooth, stable frame to frame */
+  const PERM = new Uint8Array(512);
+  (() => {
+    const p = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) p[i] = i;
+    let seed = 1337;
+    for (let i = 255; i > 0; i--){
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      const j = seed % (i + 1);
+      const t = p[i]; p[i] = p[j]; p[j] = t;
+    }
+    for (let i = 0; i < 512; i++) PERM[i] = p[i & 255];
+  })();
+  const smooth = t => t * t * (3 - 2 * t);
+  function vnoise(x){
+    const i = Math.floor(x), f = x - i;
+    return lerp(PERM[i & 255] / 255, PERM[(i + 1) & 255] / 255, smooth(f));
+  }
+  function fbm(x){
+    let v = 0, amp = .5, fr = 1;
+    for (let o = 0; o < 4; o++){ v += vnoise(x * fr) * amp; amp *= .5; fr *= 2.05; }
+    return v;
+  }
+
+  /* grain tile, generated once and handed to CSS */
+  (() => {
+    const g = document.createElement("canvas");
+    g.width = g.height = 170;
+    const c = g.getContext("2d");
+    const img = c.createImageData(170, 170);
+    for (let i = 0; i < img.data.length; i += 4){
+      const v = 118 + (Math.random() * 74 - 37);
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+      img.data[i + 3] = 255;
+    }
+    c.putImageData(img, 0, 0);
+    document.getElementById("grain").style.backgroundImage = `url(${g.toDataURL()})`;
+  })();
+
+  const motes = Array.from({ length: 26 }, () => ({
+    x: Math.random(), y: Math.random(),
+    r: 3 + Math.random() * 9,
+    sp: .004 + Math.random() * .011,
+    ph: Math.random() * Math.PI * 2,
+    a: .12 + Math.random() * .3,
+  }));
+
+  /* bake one ridge band into a tile DRIFT px wider than the screen */
+  function bakeRidge({ yBase, amp, freq, seed, top, bottom, blur }){
+    const W = Math.ceil(st.w + DRIFT), H = Math.ceil(st.h);
+    const cv = document.createElement("canvas");
+    cv.width  = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    const c = cv.getContext("2d");
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (blur) c.filter = `blur(${blur}px)`;
+
+    c.beginPath();
+    c.moveTo(-12, H + 20);
+    for (let x = -12; x <= W + 12; x += 4){
+      const n = fbm(x * freq + seed);
+      const spine = Math.pow(Math.abs(Math.sin(x * freq * .55 + seed * .8)), 1.7);
+      c.lineTo(x, yBase - (n * amp + spine * amp * .75));
+    }
+    c.lineTo(W + 12, H + 20);
+    c.closePath();
+
+    const g = c.createLinearGradient(0, yBase - amp * 1.7, 0, H);
+    g.addColorStop(0, top);
+    g.addColorStop(1, bottom);
+    c.fillStyle = g;
+    c.fill();
+    return cv;
+  }
+
+  /* The summit the cup stands on. Unlike the ridge bands this one does NOT
+     drift: its crest is pinned to the cup's base, so the cup never floats
+     off its own mountain. A gaussian guarantees the peak is under the cup;
+     fbm only roughens it. */
+  function bakeSummit(){
+    const W = Math.ceil(st.w), H = Math.ceil(st.h);
+    const cv = document.createElement("canvas");
+    cv.width  = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    const c = cv.getContext("2d");
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const crest = st.cupBaseY - 8;
+    /* the mountain's height is bounded relative to the crest, so a tall
+       narrow screen gets a hill rather than a black cone */
+    const foot  = Math.min(H * 1.12, crest + H * st.L.summitDrop + H * .1);
+    const half  = Math.max(150, st.w * st.L.summitHalf);
+
+    const pts = [];
+    for (let x = -12; x <= W + 12; x += 4){
+      const u = (x - W / 2) / half;
+      const bump = Math.exp(-u * u * 1.9);
+      /* two scales of roughness: broad shoulders plus a broken crest,
+         otherwise the gaussian reads as a smooth paper cone */
+      const rough = (fbm(x * .014 + 77) - .5) * H * .17
+                  + (fbm(x * .058 + 310) - .5) * H * .04;
+      pts.push([x, foot - (foot - crest) * bump + rough * (.3 + .7 * bump)]);
+    }
+
+    c.beginPath();
+    c.moveTo(-12, H + 20);
+    for (const [x, y] of pts) c.lineTo(x, y);
+    c.lineTo(W + 12, H + 20);
+    c.closePath();
+    const g = c.createLinearGradient(0, crest, 0, H);
+    g.addColorStop(0, PAL.ridges[2][0]);
+    g.addColorStop(1, PAL.ridges[2][1]);
+    c.fillStyle = g;
+    c.fill();
+
+    /* rim light picks the crest out of the backdrop */
+    c.beginPath();
+    pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y));
+    c.strokeStyle = "rgba(198, 212, 148, .17)";
+    c.lineWidth = 1.6;
+    c.stroke();
+    return cv;
+  }
+
+  function bake(){
+    const H = st.h;
+    ridges = [
+      /* far range — soft, slow, and it sits BEHIND the cup */
+      bakeRidge({ yBase: H * .88, amp: H * .12, freq: .011, seed: 0,
+                  top: PAL.ridges[0][0], bottom: PAL.ridges[0][1], blur: 5 }),
+      bakeRidge({ yBase: H * .99, amp: H * .09, freq: .017, seed: 41,
+                  top: PAL.ridges[1][0], bottom: PAL.ridges[1][1], blur: 2 }),
+      /* the summit, then one front mound that laps over its foot */
+      bakeSummit(),
+      bakeRidge({ yBase: H * 1.30, amp: H * .30, freq: .013, seed: 305,
+                  top: PAL.ridges[3][0], bottom: PAL.ridges[3][1], blur: 0 }),
+    ];
+
+    /* vignette, also static */
+    vigCv.width  = Math.round(st.w * dpr);
+    vigCv.height = Math.round(st.h * dpr);
+    const c = vigCv.getContext("2d");
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.clearRect(0, 0, st.w, st.h);
+    const v = c.createRadialGradient(
+      st.w * .5, st.h * .42, Math.min(st.w, st.h) * .22,
+      st.w * .5, st.h * .5,  Math.max(st.w, st.h) * .78);
+    v.addColorStop(0, rgba(hexToRgb(PAL.vignette), 0));
+    v.addColorStop(.55, rgba(hexToRgb(PAL.vignette), .3));
+    v.addColorStop(1, rgba(hexToRgb(PAL.vignette), .88));
+    c.fillStyle = v;
+    c.fillRect(0, 0, st.w, st.h);
+  }
+
+  function resizeCanvas(){
+    if (!st.w || !st.h) return;
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    for (const c of [far, near]){
+      c.width  = Math.round(st.w * dpr);
+      c.height = Math.round(st.h * dpr);
+      c.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    lightCv.width  = Math.max(2, Math.round(st.w / LIGHT_DIV));
+    lightCv.height = Math.max(2, Math.round(st.h / LIGHT_DIV));
+    bake();
+  }
+
+  /* the light field: wash + four drifting lobes + the flavour bloom */
+  function drawLight(t){
+    const W = lightCv.width, H = lightCv.height;
+    const A = st.accent;
+
+    const wash = lightCx.createLinearGradient(0, 0, 0, H);
+    wash.addColorStop(0,   PAL.washA);
+    wash.addColorStop(.42, PAL.washB);
+    wash.addColorStop(1,   PAL.washC);
+    lightCx.globalCompositeOperation = "source-over";
+    lightCx.fillStyle = wash;
+    lightCx.fillRect(0, 0, W, H);
+
+    lightCx.globalCompositeOperation = "screen";
+    const lobes = [
+      [.30, .26, .52, 0.00],
+      [.72, .18, .44, 1.90],
+      [.52, .58, .62, 3.40],
+      [.14, .70, .40, 5.10],
+    ];
+    lobes.forEach(([bx, by, br, ph], i) => {
+      const cx = (bx + Math.sin(t * .00013 + ph) * .07) * W;
+      const cy = (by + Math.cos(t * .00017 + ph * 1.3) * .05) * H;
+      const rr = br * Math.max(W, H) * (.9 + Math.sin(t * .00021 + ph) * .08);
+      const g = lightCx.createRadialGradient(cx, cy, 0, cx, cy, rr);
+      g.addColorStop(0, PAL.lobes[i]);
+      g.addColorStop(1, "rgba(0,0,0,0)");
+      lightCx.fillStyle = g;
+      lightCx.fillRect(0, 0, W, H);
+    });
+
+    /* bloom behind the cup, tinted by whatever is chosen */
+    const bx = W * .5, by = H * st.L.cupY - H * .06;
+    const br = Math.max(W, H) * (.36 + Math.sin(t * .0004) * .012);
+    const bg = lightCx.createRadialGradient(bx, by, 0, bx, by, br);
+    bg.addColorStop(0,   rgba(A, .30));
+    bg.addColorStop(.45, rgba(A, .09));
+    bg.addColorStop(1,   "rgba(0,0,0,0)");
+    lightCx.fillStyle = bg;
+    lightCx.fillRect(0, 0, W, H);
+    lightCx.globalCompositeOperation = "source-over";
+  }
+
+  function drawFar(t){
+    if (!ridges.length) return;
+    const W = st.w, H = st.h;
+    drawLight(t);
+
+    fx.clearRect(0, 0, W, H);
+    fx.imageSmoothingEnabled = true;
+    fx.drawImage(lightCv, 0, 0, W, H);
+
+    /* parallax: each tile slides at its own rate */
+    fx.drawImage(ridges[0], -((t * .0016) % DRIFT), 0, W + DRIFT, H);
+    fx.drawImage(ridges[1], -((t * .0029) % DRIFT), 0, W + DRIFT, H);
+    fx.drawImage(vigCv, 0, 0, W, H);
+  }
+
+  function drawNear(t){
+    if (!ridges.length) return;
+    const W = st.w, H = st.h;
+    nx.clearRect(0, 0, W, H);
+    nx.drawImage(ridges[2], 0, 0, W, H);                              // pinned summit
+    nx.drawImage(ridges[3], -((t * .0014) % DRIFT), 0, W + DRIFT, H); // drifting front
+
+    /* dust catching the light */
+    nx.save();
+    nx.globalCompositeOperation = "screen";
+    for (const m of motes){
+      const px = mod(m.x + Math.sin(t * .0003 + m.ph) * .012, 1) * W;
+      const py = mod(m.y - t * m.sp * .00004, 1) * H;
+      const g = nx.createRadialGradient(px, py, 0, px, py, m.r);
+      g.addColorStop(0, `rgba(240,244,214,${m.a})`);
+      g.addColorStop(1, "rgba(240,244,214,0)");
+      nx.fillStyle = g;
+      nx.beginPath();
+      nx.arc(px, py, m.r, 0, Math.PI * 2);
+      nx.fill();
+    }
+    nx.restore();
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     8. LOOP
+     ═══════════════════════════════════════════════════════════ */
+  let last = performance.now(), auto = 0, frame = 0, running = false;
+
+  function tick(now){
+    if (!running) return;
+    const dt = Math.min(.05, (now - last) / 1000);
+    last = now;
+
+    if (st.intro < 1) st.intro = Math.min(1, st.intro + dt / 1.05);
+    const eased = 1 - Math.pow(1 - st.intro, 3);
+
+    /* spring the wheel toward its target slot */
+    if (!st.dragging){
+      const d = st.target - st.pos;
+      st.vel += d * 168 * dt;
+      st.vel *= Math.pow(.0009, dt);
+      st.pos += st.vel * dt;
+      if (Math.abs(d) < .0004 && Math.abs(st.vel) < .01){
+        st.pos = st.target;
+        st.vel = 0;
+      }
+    }
+
+    layoutCards(eased);
+    paintLiquid(dt);
+
+    if (reduced){
+      if (frame === 0){ drawFar(0); drawNear(0); }
+    } else {
+      drawFar(now);
+      if (frame % 2 === 0) drawNear(now);   // half rate is plenty for dust
+    }
+    frame++;
+
+    /* gentle auto-advance until the visitor takes over */
+    if (!reduced && !st.userTouched){
+      auto += dt;
+      if (auto > 4.2){ auto = 0; select(st.selected + 1, { fromUser: false }); }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function start(){
+    if (running) return;
+    running = true;
+    last = performance.now();
+    requestAnimationFrame(tick);
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     9. INPUT
+     ═══════════════════════════════════════════════════════════ */
+  cards.forEach(c => c.addEventListener("click", () => select(+c.dataset.i)));
+
+  ring.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight"){ select(st.selected + 1); e.preventDefault(); }
+    else if (e.key === "ArrowLeft"){ select(st.selected - 1); e.preventDefault(); }
+  });
+
+  let dragX = 0, dragPos = 0, pid = null;
+  ring.addEventListener("pointerdown", e => {
+    if (e.target.closest(".fcard")) return;   // let the button take it
+    pid = e.pointerId;
+    ring.setPointerCapture(pid);
+    st.dragging = true;
+    st.userTouched = true;
+    ring.classList.add("is-dragging");
+    dragX = e.clientX;
+    dragPos = st.pos;
+  });
+  ring.addEventListener("pointermove", e => {
+    if (!st.dragging || e.pointerId !== pid) return;
+    const perSlot = Math.sin(st.L.step) * st.L.radius * st.scale;
+    st.pos = dragPos - (e.clientX - dragX) / perSlot;
+  });
+  function endDrag(){
+    if (!st.dragging) return;
+    st.dragging = false;
+    ring.classList.remove("is-dragging");
+    select(Math.round(st.pos));
+  }
+  ring.addEventListener("pointerup", endDrag);
+  ring.addEventListener("pointercancel", endDrag);
+
+  let wheelLock = 0;
+  screen.addEventListener("wheel", e => {
+    if (Math.abs(e.deltaX) < Math.abs(e.deltaY) * 1.2) return;  // leave vertical alone
+    e.preventDefault();
+    const now = performance.now();
+    if (now - wheelLock < 260) return;
+    wheelLock = now;
+    select(st.selected + Math.sign(e.deltaX));
+  }, { passive: false });
+
+  chipEl.addEventListener("click", () => {
+    const f = FLAVOURS[st.selected];
+    chipEl.animate([
+      { transform: "translateX(-50%) scale(1)" },
+      { transform: "translateX(-50%) scale(.9)" },
+      { transform: "translateX(-50%) scale(1)" },
+    ], { duration: reduced ? 1 : 320, easing: "cubic-bezier(.16,1,.3,1)" });
+    chipEl.setAttribute("aria-label", `${f.name}, ${f.price} — добавлено в заказ`);
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) running = false;
+    else start();
+  });
+
+  /* ═══════════════════════════════════════════════════════════
+     10. BOOT
+     ═══════════════════════════════════════════════════════════ */
+  new ResizeObserver(() => {
+    measure();
+    resizeCanvas();
+    layoutCards(1 - Math.pow(1 - st.intro, 3));
+    if (reduced){ drawFar(0); drawNear(0); }
+  }).observe(screen);
+
+  measure();
+  resizeCanvas();
+  select(0, { fromUser: false });
+  layoutCards(st.intro);
+  start();
+
+  /* let the first frame paint, then release the intro cascade */
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.documentElement.classList.add("is-ready");
+  }));
+})();
+</script>
