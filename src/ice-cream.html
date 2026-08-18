@@ -1,0 +1,1480 @@
+<title>soen Gelato Bar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+/*@FONTS@*/
+
+/* ═══════════════════════════════════════════════════════════════
+   TOKENS
+   The light palette lives on bare :root so the unstamped
+   ("system") state always resolves. Only the stage — the ground
+   the screen sits on — changes with theme; the screen itself is
+   a lit interior and stays dark in both.
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  /* core ramp — the matcha teardown's structure, re-pitched for a
+     freezer counter: the interior goes berry-night so cream, mango
+     and pistachio all read as light against it */
+  --ink:       #140D16;
+  --ink-lift:  #1D1320;
+  --plum:      #33203A;
+  --plum-hi:   #4A2F52;
+  --sorbet:    #E9B7C6;
+  --sorbet-dp: #A8788A;
+  --bone:      #F4ECE4;
+  --bone-dim:  #D6C6BE;
+
+  /* backdrop ramp — read by the canvas, so the tokens are the
+     single source of truth for the artwork too */
+  --bd-wash-a: #241631;
+  --bd-wash-b: #3A2245;
+  --bd-wash-c: #0C060F;
+  --lobe-a:    #6B3C6E;
+  --lobe-b:    #8A4C74;
+  --lobe-c:    #4A2A56;
+  --lobe-d:    #35204A;
+  --ridge-1a:  #4A2B55;  --ridge-1b: #2A1730;
+  --ridge-2a:  #3B2246;  --ridge-2b: #1D1024;
+  --ridge-3a:  #331D3E;  --ridge-3b: #0F0714;
+  --ridge-4a:  #23142B;  --ridge-4b: #0A050D;
+  --vignette:  #070309;
+
+  /* stage */
+  --stage:      var(--sorbet);
+  --stage-text: #4A2436;
+
+  /* the accent is not a constant: the carousel writes it live */
+  --accent: #E4B75C;
+
+  --r-screen: 46px;
+  --r-card:   30px;
+  --r-pill:   999px;
+  --r-chip:   14px;
+
+  /* the screen's inner padding — measured at 35/40px on an 800px
+     frame, i.e. 4.4% of frame width */
+  --pad: clamp(18px, 4.4%, 64px);
+
+  --ease-out:  cubic-bezier(.16, 1, .3, 1);
+  --ease-soft: cubic-bezier(.32, .72, 0, 1);
+
+  --font-display: 'Prata', 'Iowan Old Style', Georgia, serif;
+  --font-ui: 'Golos', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetMono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --stage:      #100816;
+    --stage-text: #B0819A;
+  }
+}
+:root[data-theme="dark"]{
+  --stage:      #100816;
+  --stage-text: #B0819A;
+}
+
+*, *::before, *::after{ box-sizing: border-box; }
+
+body{
+  margin: 0;
+  background: var(--stage);
+  color: var(--stage-text);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STAGE
+   ═══════════════════════════════════════════════════════════════ */
+.stage{
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: clamp(10px, 1.6vh, 22px);
+  padding: clamp(12px, 2.2vmin, 30px);
+}
+
+.chrome{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-inline: clamp(2px, 1vw, 14px);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.chrome b{ font-weight: 700; }
+.chrome-mid{
+  flex: 0 0 auto;
+  position: relative;
+  width: 15px; height: 15px;
+  opacity: .75;
+}
+.chrome-mid::before, .chrome-mid::after{
+  content: "";
+  position: absolute;
+  background: currentColor;
+}
+.chrome-mid::before{ top: 7px; left: 0; width: 15px; height: 1px; }
+.chrome-mid::after{ top: 0; left: 7px; width: 1px; height: 15px; }
+
+/* the shell carries radius + cast shadow; the screen inside carries
+   the clip, so the intro mask can never eat the shadow */
+.shell{
+  position: relative;
+  border-radius: var(--r-screen);
+  background: var(--ink);
+  box-shadow: 0 30px 70px -30px rgba(8, 12, 4, .6);
+  min-height: 520px;
+}
+
+.screen{
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: inherit;
+  /* intro: the interior unmasks downward before anything inside moves */
+  clip-path: inset(0 0 100% 0 round var(--r-screen));
+  transition: clip-path .82s var(--ease-soft);
+}
+.is-ready .screen{ clip-path: inset(0 0 0 0 round var(--r-screen)); }
+
+.screen::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: 0 0 0 1px rgba(237, 235, 221, .11) inset;
+}
+
+.layer{ position: absolute; inset: 0; pointer-events: none; }
+#bgFar{ z-index: 0; }
+#bgNear{ z-index: 3; }
+
+/* film grain rides on the compositor, not the canvas */
+.grain{
+  position: absolute;
+  inset: -80px;
+  z-index: 1;
+  pointer-events: none;
+  opacity: .07;
+  mix-blend-mode: overlay;
+  background-repeat: repeat;
+  animation: grainShift 1.1s steps(1, end) infinite;
+}
+@keyframes grainShift{
+  0%   { transform: translate3d(0, 0, 0); }
+  12.5%{ transform: translate3d(-31px, 18px, 0); }
+  25%  { transform: translate3d(22px, -37px, 0); }
+  37.5%{ transform: translate3d(-44px, -11px, 0); }
+  50%  { transform: translate3d(13px, 41px, 0); }
+  62.5%{ transform: translate3d(38px, 7px, 0); }
+  75%  { transform: translate3d(-17px, -29px, 0); }
+  87.5%{ transform: translate3d(29px, 33px, 0); }
+}
+
+/* ── top bar ──────────────────────────────────────────────── */
+.top{
+  position: absolute;
+  z-index: 6;
+  inset: var(--pad) var(--pad) auto;
+  /* three tracks so the pill is centred on the screen, not on
+     whatever is left over after the wordmark */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 14px;
+}
+.top .icon-btn{ justify-self: end; }
+.top > *{
+  opacity: 0;
+  transform: translateY(-9px);
+  transition:
+    opacity .6s var(--ease-out) var(--d, 0ms),
+    transform .6s var(--ease-out) var(--d, 0ms);
+}
+.is-ready .top > *{ opacity: 1; transform: none; }
+
+.mark{
+  font-family: var(--font-display);
+  font-size: clamp(19px, 1.7vw, 27px);
+  line-height: 1;
+  letter-spacing: -.005em;
+  color: var(--bone);
+  text-decoration: none;
+}
+.mark sup{
+  font-family: var(--font-ui);
+  font-size: .34em;
+  font-weight: 600;
+  vertical-align: super;
+  margin-left: .12em;
+  opacity: .8;
+}
+
+.pill{
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--r-pill);
+  background: rgba(237, 235, 221, .13);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: 0 0 0 1px rgba(237, 235, 221, .10) inset;
+}
+.pill button{
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  width: 34px; height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--bone);
+  transition: background .35s var(--ease-out), color .35s var(--ease-out);
+}
+.pill button:hover{ background: rgba(237, 235, 221, .17); }
+.pill button[aria-current="true"]{ background: var(--bone); color: var(--ink); }
+.pill svg{ display: block; width: 15px; height: 15px; }
+
+.icon-btn{
+  flex: 0 0 auto;
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  width: 42px; height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: rgba(237, 235, 221, .13);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 0 0 1px rgba(237, 235, 221, .10) inset;
+  color: var(--bone);
+  transition: background .35s var(--ease-out);
+}
+.icon-btn:hover{ background: rgba(237, 235, 221, .21); }
+.icon-btn svg{ width: 15px; height: 15px; }
+
+/* ── the wheel ────────────────────────────────────────────── */
+.ring{
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  touch-action: pan-y;
+  cursor: grab;
+}
+.ring.is-dragging{ cursor: grabbing; }
+
+.fcard{
+  position: absolute;
+  left: 50%; top: 50%;
+  width: var(--card-size, 168px);
+  height: var(--card-size, 168px);
+  margin: calc(var(--card-size, 168px) / -2);
+  appearance: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  border-radius: var(--r-card);
+  background: linear-gradient(168deg, #F4F2E6 0%, var(--bone) 48%, #DEDCCB 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, .7) inset,
+    0 22px 34px -18px rgba(6, 9, 4, .72),
+    0 4px 10px -4px rgba(6, 9, 4, .45);
+  display: grid;
+  place-items: center;
+  /* JS writes --x --y --rot --sc --op each frame */
+  transform:
+    translate3d(var(--x, 0px), var(--y, 0px), 0)
+    rotate(var(--rot, 0deg))
+    scale(var(--sc, 1));
+  opacity: var(--op, 1);
+  will-change: transform, opacity;
+}
+.fcard::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(150deg, rgba(255,255,255,.55), rgba(255,255,255,0) 46%);
+  mix-blend-mode: soft-light;
+}
+.fcard svg{
+  width: 58%; height: 58%;
+  overflow: visible;
+  transition: transform .5s var(--ease-out);
+}
+.fcard:hover svg{ transform: scale(1.09) rotate(-3deg); }
+.fcard:focus-visible{ outline: 2px solid var(--bone); outline-offset: 5px; }
+
+/* ── the cone, in the wheel's empty centre slot ─────────────── */
+.conewrap{
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: var(--cone-top, 20%);
+  width: var(--cone-w, 300px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.cone{
+  display: block;
+  width: 100%; height: auto;
+  filter: drop-shadow(0 26px 32px rgba(10, 4, 16, .62));
+  opacity: 0;
+  transform: translateY(26px) scale(.9);
+  transition:
+    opacity .8s var(--ease-out) 260ms,
+    transform 1s var(--ease-out) 260ms;
+}
+.is-ready .cone{ opacity: 1; transform: none; }
+
+/* the name is clipped by the cone's own width — that is what makes
+   the half-word states as the wheel turns */
+.namewin{
+  position: absolute;
+  left: 50%;
+  bottom: 20%;
+  width: 104%;
+  transform: translateX(-50%);
+  overflow: hidden;
+  text-align: center;
+  opacity: 0;
+  transition: opacity .7s var(--ease-out) 660ms;
+}
+.is-ready .namewin{ opacity: 1; }
+.namewin b{
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(20px, 2.5vw, 40px);
+  line-height: 1.05;
+  white-space: nowrap;
+  color: #FBFAF2;
+  /* the label crosses the cone, and a vanilla scoop is nearly as light
+     as the type — so it carries its own halo rather than relying on
+     whatever the recipe happens to put under it */
+  text-shadow:
+    0 1px 2px rgba(12, 5, 16, .7),
+    0 2px 16px rgba(12, 5, 16, .95),
+    0 0 38px rgba(12, 5, 16, .85);
+  transform: translateX(var(--slide, 0%));
+  transition: transform .62s var(--ease-soft);
+}
+.namewin i{
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: clamp(8px, .72vw, 10.5px);
+  font-weight: 500;
+  letter-spacing: .2em;
+  white-space: nowrap;
+  color: rgba(252, 247, 244, .9);
+  text-shadow:
+    0 1px 3px rgba(12, 5, 16, .8),
+    0 1px 12px rgba(12, 5, 16, .95);
+  transform: translateX(var(--slide, 0%));
+  transition: transform .62s var(--ease-soft) 40ms;
+}
+
+/* ── price chip, on the peak and above the near layer ──────── */
+.chip{
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: var(--chip-top, 60%);
+  transform: translateX(-50%);
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 10px 14px 11px;
+  border: 0;
+  border-radius: var(--r-chip);
+  cursor: pointer;
+  background: linear-gradient(180deg, #F5F3E7, var(--bone));
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, .8) inset,
+    0 16px 26px -14px rgba(6, 9, 4, .75);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  opacity: 0;
+  transition:
+    opacity .5s var(--ease-out) 940ms,
+    box-shadow .35s var(--ease-out);
+}
+.is-ready .chip{ opacity: 1; }
+.chip:hover{
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, .8) inset,
+    0 20px 30px -12px rgba(6, 9, 4, .8),
+    0 0 0 2px var(--accent);
+}
+.chip:focus-visible{ outline: 2px solid var(--bone); outline-offset: 4px; }
+.chip .cart{
+  display: grid;
+  place-items: center;
+  width: 20px; height: 20px;
+  border-radius: 7px;
+  background: #DFDDCA;
+  background: color-mix(in oklab, var(--accent) 34%, #E4E2D0);
+  transition: background .5s var(--ease-out);
+}
+.chip .cart svg{ width: 12px; height: 12px; }
+
+/* ── headline ─────────────────────────────────────────────── */
+.headline{
+  position: absolute;
+  z-index: 5;
+  inset: auto var(--pad) calc(var(--pad) * .78);
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(28px, 6.6vw, 96px);
+  line-height: 1.0;
+  letter-spacing: -.018em;
+  color: #F4F2E4;
+  text-wrap: balance;
+  text-shadow: 0 4px 40px rgba(6, 9, 4, .5);
+}
+.headline span{
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  /* the mask must clear the descenders, or Prata's р/у get sliced */
+  padding: .16em .04em .22em;
+  margin: -.16em -.04em -.22em;
+}
+.headline i{
+  display: inline-block;
+  font-style: normal;
+  transform: translateY(106%);
+  transition: transform .9s var(--ease-out) var(--d, 0ms);
+}
+.is-ready .headline i{ transform: none; }
+
+/* ── rail ─────────────────────────────────────────────────── */
+.rail{
+  position: absolute;
+  z-index: 6;
+  left: var(--pad);
+  bottom: calc(var(--pad) * .26);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: rgba(237, 235, 221, .55);
+  opacity: 0;
+  transition: opacity .6s var(--ease-out) 1040ms;
+}
+.is-ready .rail{ opacity: 1; }
+.rail .dots{ display: flex; gap: 5px; }
+.rail .dots i{
+  width: 5px; height: 5px;
+  border-radius: 999px;
+  background: rgba(237, 235, 221, .28);
+  transition: background .4s var(--ease-out), width .4s var(--ease-out);
+}
+.rail .dots i[data-on="1"]{ width: 17px; background: var(--accent); }
+
+@media (max-width: 900px){
+  .pill{ display: none; }
+  .headline{ inset: auto 14px calc(var(--pad) * .9); font-size: clamp(28px, 8.4vw, 62px); }
+  .rail{
+    left: 50%;
+    bottom: calc(var(--pad) * .34);
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+}
+@media (max-width: 700px){
+  :root{ --r-screen: 30px; --pad: clamp(16px, 6%, 30px); }
+  /* the arc moves below the cone on narrow screens, so the name has to
+     clear it rather than sit inside the fan */
+  .namewin{ bottom: 33%; }
+  /* one line only: the numeral and the dots. The instruction is dropped
+     rather than allowed to wrap into three lines. */
+  .rail span:last-child{ display: none; }
+  .chrome{ font-size: 9px; letter-spacing: .09em; }
+  .chrome span:last-child{ display: none; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .screen, .cone, .namewin, .namewin b, .namewin i,
+  .chip, .rail, .top > *, .headline i, .fcard svg{
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+  .grain{ animation: none; }
+}
+</style>
+
+<div class="stage">
+  <div class="chrome">
+    <span><b>soen</b> — gelato bar / hero concept</span>
+    <span class="chrome-mid" aria-hidden="true"></span>
+    <span>выбор на первом экране</span>
+  </div>
+
+  <div class="shell">
+    <main class="screen" id="screen">
+      <canvas class="layer" id="bgFar" aria-hidden="true"></canvas>
+      <div class="grain" id="grain" aria-hidden="true"></div>
+      <canvas class="layer" id="bgNear" aria-hidden="true"></canvas>
+
+      <header class="top">
+        <a class="mark" href="#" style="--d:940ms">soen<sup>®</sup></a>
+
+        <nav class="pill" aria-label="Разделы" style="--d:1000ms">
+          <button type="button" aria-label="Меню">
+            <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1.6"/><rect x="9" y="1" width="6" height="6" rx="1.6"/><rect x="1" y="9" width="6" height="6" rx="1.6"/><rect x="9" y="9" width="6" height="6" rx="1.6"/></svg>
+          </button>
+          <button type="button" aria-label="Доставка">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="3.5" width="13" height="10" rx="2.2"/><path d="M1.5 6.6h13"/></svg>
+          </button>
+          <button type="button" aria-label="О мороженом">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.3"/><circle cx="8" cy="8" r="2.3"/><path d="M14.3 8v2.2a2 2 0 0 1-4 0"/></svg>
+          </button>
+          <button type="button" aria-label="Соцсети">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 2.5l11 11M13.5 2.5l-11 11"/></svg>
+          </button>
+          <button type="button" aria-current="true" aria-label="Корзина">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.6 2.2h1.9l1.9 8.1h7.3"/><path d="M4.6 4.6h9.8l-1.3 4.4H5.6"/><circle cx="6.4" cy="13.2" r="1.2"/><circle cx="12" cy="13.2" r="1.2"/></svg>
+          </button>
+        </nav>
+
+        <button class="icon-btn" type="button" aria-label="Найти кофейню" style="--d:1060ms">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 14.5s5-4.4 5-8a5 5 0 0 0-10 0c0 3.6 5 8 5 8Z"/><circle cx="8" cy="6.4" r="1.9"/></svg>
+        </button>
+      </header>
+
+      <div class="conewrap">
+        <svg class="cone" viewBox="0 0 300 430" role="img" aria-labelledby="coneTitle">
+          <title id="coneTitle">Рожок в три шарика — состав меняется вместе с выбором</title>
+          <defs>
+            <!-- the cone is a wedge with a slack top edge: a straight
+                 triangle reads as a party hat, the sag reads as waffle -->
+            <clipPath id="coneShape">
+              <path d="M82 228 Q150 248 218 228 L150 424 Z"/>
+            </clipPath>
+            <!-- the glaze is poured, so it may only exist where the top
+                 scoop already is — bumps included, or the drips would
+                 hang in mid-air past the scoop's edge -->
+            <clipPath id="crownClip">
+              <ellipse cx="157" cy="108" rx="55" ry="48"/>
+              <circle cx="202" cy="135" r="9"/>
+              <circle cx="167" cy="155" r="9"/>
+              <circle cx="126" cy="147" r="9"/>
+            </clipPath>
+            <linearGradient id="coneShade" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0"   stop-color="#000" stop-opacity=".42"/>
+              <stop offset=".28" stop-color="#000" stop-opacity="0"/>
+              <stop offset=".74" stop-color="#000" stop-opacity="0"/>
+              <stop offset="1"   stop-color="#000" stop-opacity=".48"/>
+            </linearGradient>
+            <!-- one light from the upper left: the same wash on every
+                 scoop is what binds three separate blobs into one cone -->
+            <linearGradient id="scoopShade" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0"   stop-color="#fff" stop-opacity=".20"/>
+              <stop offset=".38" stop-color="#fff" stop-opacity="0"/>
+              <stop offset=".70" stop-color="#000" stop-opacity="0"/>
+              <stop offset="1"   stop-color="#000" stop-opacity=".30"/>
+            </linearGradient>
+          </defs>
+
+          <!-- ── waffle ──────────────────────────────────────────── -->
+          <g clip-path="url(#coneShape)">
+            <rect x="60" y="214" width="180" height="220" fill="#C68B47"/>
+            <g id="waffle" fill="none" stroke="#8A5628" stroke-width="2.4"
+               stroke-linecap="round" opacity=".5"></g>
+            <rect x="60" y="214" width="180" height="220" fill="url(#coneShade)"/>
+          </g>
+          <path d="M82 228 Q150 248 218 228 L150 424 Z"
+                fill="none" stroke="#8A5626" stroke-opacity=".8" stroke-width="2.2"/>
+          <!-- rolled rim, drawn before the scoops so they sit into it -->
+          <ellipse cx="150" cy="228" rx="70" ry="15" fill="#B0742F"/>
+          <ellipse cx="150" cy="223" rx="70" ry="15" fill="#E2AC66"/>
+
+          <!-- ── scoops, bottom to top ───────────────────────────── -->
+          <!-- Each scoop is one ellipse plus a row of circles along its
+               lower edge. That row is the whole trick: a bare ellipse
+               reads as a ball, the bumps read as something scooped. -->
+          <g id="scoopB" fill="#F2E4C2">
+            <ellipse cx="150" cy="216" rx="78" ry="64"/>
+            <circle cx="220" cy="243" r="13"/><circle cx="189" cy="271" r="13"/>
+            <circle cx="150" cy="280" r="13"/><circle cx="111" cy="271" r="13"/>
+            <circle cx="80"  cy="243" r="13"/>
+            <ellipse cx="150" cy="216" rx="78" ry="64" fill="url(#scoopShade)"/>
+            <ellipse cx="113" cy="186" rx="24" ry="13" fill="#fff" opacity=".22"
+                     transform="rotate(-20 113 186)"/>
+          </g>
+          <g id="scoopM" fill="#F7EDD6">
+            <ellipse cx="143" cy="158" rx="66" ry="56"/>
+            <circle cx="200" cy="186" r="11"/><circle cx="160" cy="212" r="11"/>
+            <circle cx="115" cy="209" r="11"/><circle cx="86"  cy="186" r="11"/>
+            <ellipse cx="143" cy="158" rx="66" ry="56" fill="url(#scoopShade)"/>
+            <ellipse cx="112" cy="133" rx="20" ry="11" fill="#fff" opacity=".22"
+                     transform="rotate(-20 112 133)"/>
+          </g>
+          <g id="scoopT" fill="#EFE0BC">
+            <ellipse cx="157" cy="108" rx="55" ry="48"/>
+            <circle cx="202" cy="135" r="9"/><circle cx="167" cy="155" r="9"/>
+            <circle cx="126" cy="147" r="9"/>
+            <ellipse cx="157" cy="108" rx="55" ry="48" fill="url(#scoopShade)"/>
+          </g>
+
+          <!-- wafer, pushed into the top scoop -->
+          <g transform="rotate(15 214 62)">
+            <rect x="204" y="24" width="21" height="76" rx="5" fill="#E7BD80"/>
+            <rect x="204" y="24" width="21" height="76" rx="5"
+                  fill="none" stroke="#A9762F" stroke-width="2"/>
+            <path d="M204 44h21M204 62h21M204 80h21"
+                  stroke="#A9762F" stroke-width="1.6" opacity=".65"/>
+          </g>
+
+          <!-- ── glaze ───────────────────────────────────────────── -->
+          <g id="glaze" fill="#C99A45" clip-path="url(#crownClip)">
+            <ellipse cx="157" cy="86" rx="58" ry="42"/>
+            <circle cx="112" cy="118" r="12"/><circle cx="136" cy="130" r="10"/>
+            <circle cx="160" cy="126" r="13"/><circle cx="185" cy="132" r="10"/>
+            <circle cx="205" cy="116" r="11"/>
+            <ellipse cx="136" cy="142" rx="6"   ry="14"/>
+            <ellipse cx="185" cy="144" rx="5.4" ry="13"/>
+            <ellipse cx="133" cy="70" rx="21" ry="11" fill="#fff" opacity=".24"
+                     transform="rotate(-16 133 70)"/>
+          </g>
+
+          <g id="sprinkles" fill="#E4B75C"></g>
+        </svg>
+
+        <div class="namewin" id="namewin" aria-live="polite">
+          <b id="fName">Ваниль</b>
+          <i id="fSlug">[ VANILLA_POD ]</i>
+        </div>
+      </div>
+
+      <button class="chip" id="chip" type="button">
+        <span id="price">290 ₽</span>
+        <span class="cart" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3.4v9.2M3.4 8h9.2"/></svg>
+        </span>
+      </button>
+
+      <div class="ring" id="ring"></div>
+
+      <h1 class="headline">
+        <span><i style="--d:740ms">Выберите</i></span>
+        <span><i style="--d:830ms">свой</i></span>
+        <span><i style="--d:920ms">вкус</i></span>
+      </h1>
+
+      <div class="rail">
+        <span id="railLabel">01 / 08</span>
+        <span class="dots" id="dots" aria-hidden="true"></span>
+        <span>тяните или кликните</span>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ═══════════════════════════════════════════════════════════
+     1. MENU
+     Each flavour carries its own accent and its own liquid
+     recipe, so choosing genuinely rewrites the page's colour.
+     ═══════════════════════════════════════════════════════════ */
+  /* Three scoops, bottom to top, plus the glaze poured over the crown.
+     The bottom scoop always stays the palest of the three: it sits
+     against the waffle, and a dark scoop there swallows the cone. */
+  const FLAVOURS = [
+    { name:"Ваниль",   slug:"VANILLA_POD",     price:"290 ₽", accent:"#E4B75C",
+      scoops:["#F3E6C6","#F8EEDA","#EDDDB6"], glaze:"#C2903B" },
+    { name:"Клубника", slug:"WILD_STRAWBERRY", price:"320 ₽", accent:"#E2596F",
+      scoops:["#F0A7B6","#E4657C","#D44A63"], glaze:"#A81F3C" },
+    { name:"Шоколад",  slug:"DARK_CHOCOLATE",  price:"330 ₽", accent:"#B87A45",
+      scoops:["#9A6A45","#6E4630","#4C2E1E"], glaze:"#2C190F" },
+    { name:"Манго",    slug:"ALPHONSO_MANGO",  price:"340 ₽", accent:"#E9A126",
+      scoops:["#F8CD68","#F0A833","#E08C18"], glaze:"#C06810" },
+    { name:"Мята",     slug:"MINT_CHIP",       price:"330 ₽", accent:"#4FBF9B",
+      scoops:["#C3E7D6","#9FD9BE","#7BC7A5"], glaze:"#2C6B54" },
+    { name:"Голубика", slug:"BLUEBERRY_HAZE",  price:"350 ₽", accent:"#6A7BD1",
+      scoops:["#A9B4E6","#7E8CD3","#5C6AB4"], glaze:"#38427F" },
+    { name:"Лаванда",  slug:"LAVENDER_HONEY",  price:"360 ₽", accent:"#9B7BD4",
+      scoops:["#D5C6EE","#B49BDE","#9679CB"], glaze:"#6A4CA0" },
+    { name:"Сакура",   slug:"SAKURA_BLOSSOM",  price:"370 ₽", accent:"#EC8FB0",
+      scoops:["#F9D3E0","#F2AEC6","#E58EB1"], glaze:"#C25E88" },
+  ];
+  const N = FLAVOURS.length;
+
+  /* Every card is the same drawn cone, so the set reads as one menu
+     rather than eight clip-art fruits; the flavour lives in the scoop
+     colour and in the single garnish sitting on it. 100×100 field. */
+  const CONE_BASE =
+    `<path d="M36 55 Q50 62 64 55 L50 94 Z" fill="#CC8F4B"/>
+     <g stroke="#8A5628" stroke-width="1.5" opacity=".55" fill="none">
+       <path d="M38 62l18 8M44 74l12 5M36 70l14 20M48 60l10 22"/>
+     </g>
+     <path d="M36 55 Q50 62 64 55 L50 94 Z" fill="none" stroke="#8A5626" stroke-width="1.8"/>
+     <ellipse cx="50" cy="55" rx="14" ry="4" fill="#E2AC66"/>`;
+  const scoop = (a, b) =>
+    `<circle cx="50" cy="42" r="25" fill="${b}"/>
+     <path d="M25 42a25 25 0 0 1 50 0Z" fill="${a}"/>
+     <ellipse cx="40" cy="31" rx="9" ry="5.4" fill="#fff" opacity=".28"
+              transform="rotate(-20 40 31)"/>`;
+
+  const MARKS = [
+    /* ваниль — два стручка, воткнутых в шарик */
+    `<g>${CONE_BASE}${scoop("#F8EEDA", "#EDDDB6")}
+       <g transform="rotate(-20 42 20)">
+         <rect x="38" y="4" width="7.5" height="30" rx="3.75" fill="#5C3F27"/>
+         <rect x="38" y="4" width="7.5" height="30" rx="3.75" fill="none"
+               stroke="#2E2014" stroke-width="1.3"/></g>
+       <g transform="rotate(22 60 20)">
+         <rect x="56" y="2" width="8" height="32" rx="4" fill="#4A3220"/>
+         <rect x="56" y="2" width="8" height="32" rx="4" fill="none"
+               stroke="#2E2014" stroke-width="1.4"/>
+         <path d="M60 7v22" stroke="#7A5636" stroke-width="1.4" opacity=".8"/></g></g>`,
+    /* клубника — ягода с чашелистиком */
+    `<g>${CONE_BASE}${scoop("#F0A7B6", "#D44A63")}
+       <path d="M50 33c-9-5-14-12-14-18 0-4 4-6 7-4 3 2 5 2 7 0 3-2 7 0 7 4 0 6-5 13-7 18Z"
+             fill="#D8314A"/>
+       <path d="M50 15c-4-4-9-5-13-4 1 4 5 6 13 4Zm0 0c4-4 9-5 13-4-1 4-5 6-13 4Z" fill="#5C8A2E"/>
+       <g fill="#F6E7C0"><circle cx="46" cy="22" r="1.3"/><circle cx="53" cy="25" r="1.3"/>
+         <circle cx="49" cy="29" r="1.3"/></g></g>`,
+    /* шоколад — долька плитки */
+    `<g>${CONE_BASE}${scoop("#8A5C3C", "#4C2E1E")}
+       <g transform="rotate(-14 50 22)">
+         <rect x="36" y="10" width="28" height="22" rx="3" fill="#5A3520"/>
+         <rect x="36" y="10" width="28" height="22" rx="3" fill="none"
+               stroke="#33190D" stroke-width="2"/>
+         <path d="M50 10v22M36 21h28" stroke="#33190D" stroke-width="1.8"/>
+         <path d="M38 12h10v7H38Z" fill="#7B4C2C" opacity=".8"/></g></g>`,
+    /* манго — половинка со срезом */
+    `<g>${CONE_BASE}${scoop("#F8CD68", "#E08C18")}
+       <path d="M60 8c9 3 12 14 7 22-5 9-17 12-24 7-6-5-4-15 3-22 4-4 9-7 14-7Z" fill="#E9901C"/>
+       <path d="M58 14c6 2 8 10 4 16-4 6-12 8-16 5-4-3-2-11 4-16 3-3 6-5 8-5Z" fill="#F6C13F"/>
+       <path d="M62 5c4-4 10-5 14-4-1 5-6 8-14 4Z" fill="#5C8A2E"/></g>`,
+    /* мята — два листа */
+    `<g>${CONE_BASE}${scoop("#C3E7D6", "#7BC7A5")}
+       <path d="M50 32c-13-2-21-11-21-21 11-2 21 6 21 21Z" fill="#3F8A63"/>
+       <path d="M50 32c13-2 21-11 21-21-11-2-21 6-21 21Z" fill="#57AE7F"/>
+       <path d="M29 11c9 5 16 12 21 21m21-21c-9 5-16 12-21 21"
+             stroke="#2C6B4B" stroke-width="1.6" fill="none" opacity=".7"/></g>`,
+    /* голубика — три ягоды */
+    `<g>${CONE_BASE}${scoop("#A9B4E6", "#5C6AB4"    )}
+       <circle cx="38" cy="24" r="10" fill="#3E4B94"/>
+       <circle cx="62" cy="25" r="9"  fill="#46549F"/>
+       <circle cx="50" cy="15" r="11" fill="#5A6CC0"/>
+       <circle cx="50" cy="15" r="3.2" fill="#2F3C7B"/>
+       <g stroke="#2F3C7B" stroke-width="1.5" stroke-linecap="round">
+         <path d="M50 11.8V9M53.2 15H56M46.8 15H44M52.5 12.5l2-2M47.5 12.5l-2-2"/></g>
+       <ellipse cx="45" cy="10" rx="4" ry="2.4" fill="#96A3DE" opacity=".7"/></g>`,
+    /* лаванда — веточка с бутонами */
+    `<g>${CONE_BASE}${scoop("#D5C6EE", "#9679CB")}
+       <path d="M50 34c-2-10-1-19 2-27" stroke="#5C7A3A" stroke-width="2.6"
+             stroke-linecap="round" fill="none"/>
+       <g fill="#8A6BC4">
+         <ellipse cx="52" cy="6"  rx="4"   ry="5.4"/>
+         <ellipse cx="46" cy="12" rx="3.6" ry="4.8" transform="rotate(-22 46 12)"/>
+         <ellipse cx="58" cy="13" rx="3.6" ry="4.8" transform="rotate(22 58 13)"/>
+         <ellipse cx="48" cy="21" rx="3.4" ry="4.6" transform="rotate(-18 48 21)"/>
+         <ellipse cx="57" cy="22" rx="3.4" ry="4.6" transform="rotate(18 57 22)"/></g>
+       <g fill="#B79BE0" opacity=".8">
+         <ellipse cx="51" cy="5" rx="1.6" ry="2.2"/><ellipse cx="45" cy="11" rx="1.5" ry="2"/></g></g>`,
+    /* сакура — цветок в пять лепестков */
+    `<g>${CONE_BASE}${scoop("#F9D3E0", "#E58EB1")}
+       <g fill="#F5A9C6">
+         <ellipse cx="50" cy="8"  rx="7" ry="9"/>
+         <ellipse cx="50" cy="8"  rx="7" ry="9" transform="rotate(72 50 19)"/>
+         <ellipse cx="50" cy="8"  rx="7" ry="9" transform="rotate(144 50 19)"/>
+         <ellipse cx="50" cy="8"  rx="7" ry="9" transform="rotate(216 50 19)"/>
+         <ellipse cx="50" cy="8"  rx="7" ry="9" transform="rotate(288 50 19)"/></g>
+       <circle cx="50" cy="19" r="4.6" fill="#E7C24F"/>
+       <g stroke="#D89C3A" stroke-width="1.4" stroke-linecap="round">
+         <path d="M50 19l4-5M50 19l-4-5M50 19l6 3M50 19l-6 3"/></g></g>`,
+  ];
+
+  /* ═══════════════════════════════════════════════════════════
+     2. WHEEL GEOMETRY — reverse-engineered from the reference.
+     Cards ride a circle whose centre sits far above the screen,
+     so they fan out and dip as they travel outward. The slot at
+     angle 0 is deliberately empty: that is where the cone stands,
+     and the selected flavour pours into it instead of showing
+     a card.
+     ═══════════════════════════════════════════════════════════ */
+  const GEO = {
+    rotDamp: 0.65,    // tangent rotation, softened so cards stay readable
+    scaleFall: 0.055,
+    /* Wide screens fan the cards AROUND the cone, as the reference does.
+       Narrow screens have no room for that — the fan would collide with
+       the cone — so the arc moves BELOW it and opens up. The idea survives:
+       the choice is still on the first screen, in one gesture. */
+    wide: {
+      ref: 1440, radius: 900, step: 0.268,
+      ringY: 0.445, coneY: 0.435, card: 152, conePct: 0.28,
+      summitHalf: 0.30, summitDrop: 0.42,
+    },
+    narrow: {
+      ref: 430, radius: 300, step: 0.30,
+      ringY: 0.735, coneY: 0.325, card: 96, conePct: 0.44,
+      summitHalf: 0.62, summitDrop: 0.26,
+    },
+  };
+
+  const screen  = document.getElementById("screen");
+  const ring    = document.getElementById("ring");
+  const dotsEl  = document.getElementById("dots");
+  const railLbl = document.getElementById("railLabel");
+  const nameEl  = document.getElementById("fName");
+  const slugEl  = document.getElementById("fSlug");
+  const priceEl = document.getElementById("price");
+  const namewin = document.getElementById("namewin");
+  const chipEl  = document.getElementById("chip");
+  const scoopEls   = ["scoopB", "scoopM", "scoopT"].map(id => document.getElementById(id));
+  const glazeEl    = document.getElementById("glaze");
+  const sprinklesEl = document.getElementById("sprinkles");
+
+  const css = getComputedStyle(document.documentElement);
+  const tok = n => css.getPropertyValue(n).trim();
+
+  /* palette read from the tokens, so the artwork and the CSS agree */
+  const PAL = {
+    washA: tok("--bd-wash-a"), washB: tok("--bd-wash-b"), washC: tok("--bd-wash-c"),
+    lobes: [tok("--lobe-a"), tok("--lobe-b"), tok("--lobe-c"), tok("--lobe-d")],
+    ridges: [
+      [tok("--ridge-1a"), tok("--ridge-1b")],
+      [tok("--ridge-2a"), tok("--ridge-2b")],
+      [tok("--ridge-3a"), tok("--ridge-3b")],
+      [tok("--ridge-4a"), tok("--ridge-4b")],
+    ],
+    vignette: tok("--vignette"),
+  };
+
+  const hexToRgb = h => [
+    parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16),
+  ];
+  const rgbCss = c => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
+  const rgba   = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+  const lerp   = (a, b, t) => a + (b - a) * t;
+  const lerpC  = (a, b, t) => [lerp(a[0],b[0],t), lerp(a[1],b[1],t), lerp(a[2],b[2],t)];
+  const mod    = (n, m) => ((n % m) + m) % m;
+  /* shortest signed distance around the wheel */
+  const wrapDelta = (a, b) => {
+    let d = mod(b - a, N);
+    if (d > N / 2) d -= N;
+    return d;
+  };
+
+  /* build cards + rail dots */
+  const cards = FLAVOURS.map((f, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "fcard";
+    b.dataset.i = String(i);
+    b.setAttribute("aria-label", `${f.name} — ${f.price}`);
+    b.innerHTML = `<svg viewBox="0 0 100 100" aria-hidden="true">${MARKS[i]}</svg>`;
+    ring.appendChild(b);
+    return b;
+  });
+  FLAVOURS.forEach(() => dotsEl.appendChild(document.createElement("i")));
+  const dots = [...dotsEl.children];
+
+  /* The waffle lattice is forty-odd lines. Written into the markup it
+     would bury the shapes that actually matter, so it is generated here
+     and clipped by the cone; nothing about it is per-flavour. */
+  document.getElementById("waffle").innerHTML = (() => {
+    const out = [];
+    for (let x = -160; x <= 320; x += 21) out.push(`<path d="M${x} 210L${x + 230} 440"/>`);
+    for (let x = -20; x <= 460; x += 21) out.push(`<path d="M${x} 210L${x - 230} 440"/>`);
+    return out.join("");
+  })();
+
+  /* Sprinkles alternate accent and cream: a sprinkle in the accent
+     colour alone disappears on the scoop that shares it. */
+  document.getElementById("sprinkles").innerHTML = [
+    [ 96, 214,  14], [122, 196, -24], [140, 190,   8], [160, 178, -20],
+    [186, 166,  26], [112, 168, -12], [168, 206,  18], [196, 232,  -8],
+    [104, 242,  32], [150, 246, -14], [178, 262,  24], [120, 268, -30],
+    [210, 210,  10], [204, 256, -22],
+  ].map(([x, y, r], i) =>
+    `<rect x="${x - 5.5}" y="${y - 2.1}" width="11" height="4.2" rx="2.1"
+           transform="rotate(${r} ${x} ${y})" opacity=".9"${
+             i % 2 ? ` fill="#FFF6EA"` : ""}/>`).join("");
+
+  /* ═══════════════════════════════════════════════════════════
+     3. STATE
+     ═══════════════════════════════════════════════════════════ */
+  const st = {
+    pos: 0, target: 0, vel: 0,
+    L: GEO.wide,
+    intro: reduced ? 1 : 0,
+    selected: 0,
+    scoops: FLAVOURS[0].scoops.map(hexToRgb),
+    glaze: hexToRgb(FLAVOURS[0].glaze),
+    accent: hexToRgb(FLAVOURS[0].accent),
+    dragging: false,
+    userTouched: reduced,
+    w: 0, h: 0, scale: 1,
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     4. SIZING
+     Every distance is expressed against a 1440px reference width
+     and then scaled, so the composition holds at any size.
+     ═══════════════════════════════════════════════════════════ */
+  function measure(){
+    const r = screen.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    st.w = r.width;
+    st.h = r.height;
+
+    const L = st.L = r.width < 700 ? GEO.narrow : GEO.wide;
+    st.scale = Math.min(1.35, Math.max(.42, r.width / L.ref));
+
+    screen.style.setProperty("--card-size", Math.round(L.card * st.scale) + "px");
+
+    /* bounded by width AND height — a short viewport must not hand the cone
+       the whole screen and push the headline off the bottom */
+    const coneW = Math.round(Math.min(
+      300 * st.scale * 1.02, r.width * L.conePct, r.height * .39));
+    const coneH = coneW * (430 / 300);
+    /* on short viewports the cone would run past the headline, so cap it */
+    const coneTop = Math.max(
+      r.height * .07,
+      Math.min(r.height * L.coneY - coneH * .52, r.height - coneH - r.height * .2));
+    st.coneBaseY = coneTop + coneH * .94;   // the summit's crest is pinned here
+    screen.style.setProperty("--cone-w", coneW + "px");
+    screen.style.setProperty("--cone-top", Math.round(coneTop) + "px");
+    screen.style.setProperty("--chip-top", Math.round(coneTop + coneH * .99) + "px");
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     5. WHEEL RENDER
+     ═══════════════════════════════════════════════════════════ */
+  function layoutCards(t){
+    const L = st.L;
+    const R = L.radius * st.scale;
+    const dy = st.h * (L.ringY - .5);
+
+    for (let i = 0; i < N; i++){
+      const slot  = wrapDelta(st.pos, i);
+      const theta = slot * L.step;
+
+      const x = Math.sin(theta) * R * t;
+      const y = (1 - Math.cos(theta)) * R * t;
+
+      const dist = Math.abs(slot);
+      const sc = (1 - dist * GEO.scaleFall) * lerp(.24, 1, t);
+
+      /* The centre slot belongs to the cone, so its card must reach a true
+         zero — a bone card at even 4 % reads as a ghost over the cone.
+         Smoothstep gets there cleanly and also softens the emergence. */
+      const hole = Math.min(1, dist / .95);
+      const holeS = hole * hole * (3 - 2 * hole);
+      const edge = Math.max(0, Math.min(1, (N / 2 - dist) / .85));
+      const op = holeS * edge * t;
+
+      const s = cards[i].style;
+      s.setProperty("--x", x.toFixed(2) + "px");
+      s.setProperty("--y", (y + dy).toFixed(2) + "px");
+      s.setProperty("--rot", (theta * GEO.rotDamp * 180 / Math.PI).toFixed(2) + "deg");
+      s.setProperty("--sc", sc.toFixed(3));
+      s.setProperty("--op", op.toFixed(3));
+      s.zIndex = String(40 - Math.round(dist * 10));
+
+      /* a faded card must not be clickable or a tab stop */
+      const live = op >= .12;
+      s.pointerEvents = live ? "auto" : "none";
+      cards[i].tabIndex = live ? 0 : -1;
+      cards[i].setAttribute("aria-hidden", live ? "false" : "true");
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     6. CHOOSING — rewrites the cone, accent, price and label
+     ═══════════════════════════════════════════════════════════ */
+  let slideTimer = 0;
+
+  function select(i, { fromUser = true } = {}){
+    i = mod(Math.round(i), N);
+    const changed = i !== st.selected;
+    st.selected = i;
+    st.target = st.pos + wrapDelta(st.pos, i);
+    if (fromUser) st.userTouched = true;
+
+    const f = FLAVOURS[i];
+    screen.style.setProperty("--accent", f.accent);
+    priceEl.textContent = f.price;
+    railLbl.textContent =
+      `${String(i + 1).padStart(2, "0")} / ${String(N).padStart(2, "0")}`;
+    dots.forEach((d, k) => d.dataset.on = k === i ? "1" : "0");
+    cards.forEach((c, k) => c.setAttribute("aria-pressed", String(k === i)));
+
+    if (!changed) return;
+
+    if (reduced){
+      nameEl.textContent = f.name;
+      slugEl.textContent = `[ ${f.slug} ]`;
+      return;
+    }
+    /* the name slides out, swaps, and slides back in — this is what
+       produces the clipped half-words mid-transition */
+    clearTimeout(slideTimer);
+    namewin.style.setProperty("--slide", "-62%");
+    slideTimer = setTimeout(() => {
+      nameEl.textContent = f.name;
+      slugEl.textContent = `[ ${f.slug} ]`;
+      namewin.style.transition = "none";
+      namewin.style.setProperty("--slide", "62%");
+      requestAnimationFrame(() => {
+        namewin.style.transition = "";
+        namewin.style.setProperty("--slide", "0%");
+      });
+    }, 300);
+  }
+
+  /* the cone is tweened toward the selection, never snapped: the scoops
+     bleed from one flavour into the next while the wheel is still moving */
+  function paintScoops(dt){
+    const f = FLAVOURS[st.selected];
+    const k = reduced ? 1 : 1 - Math.pow(.0035, dt);
+    const tgt = f.scoops.map(hexToRgb);
+    for (let i = 0; i < 3; i++) st.scoops[i] = lerpC(st.scoops[i], tgt[i], k);
+    st.glaze  = lerpC(st.glaze,  hexToRgb(f.glaze),  k);
+    st.accent = lerpC(st.accent, hexToRgb(f.accent), k);
+
+    for (let i = 0; i < 3; i++) scoopEls[i].setAttribute("fill", rgbCss(st.scoops[i]));
+    glazeEl.setAttribute("fill", rgbCss(st.glaze));
+    sprinklesEl.setAttribute("fill", rgbCss(st.accent));
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     7. BACKDROP
+     No photography. Three procedural strata:
+       · light field — four drifting lobes + the flavour bloom,
+         rendered at quarter scale and upscaled (it is all low
+         frequency, so the resolution is free)
+       · ridges — fbm silhouettes baked once per resize into wide
+         offscreen tiles, then translated for real parallax drift
+       · grain — a CSS layer on the compositor, not the canvas
+     ═══════════════════════════════════════════════════════════ */
+  const far  = document.getElementById("bgFar");
+  const near = document.getElementById("bgNear");
+  const fx = far.getContext("2d");
+  const nx = near.getContext("2d");
+
+  const lightCv = document.createElement("canvas");
+  const lightCx = lightCv.getContext("2d");
+  const vigCv   = document.createElement("canvas");
+  const LIGHT_DIV = 4;
+  const DRIFT = 300;              // how far a ridge tile can travel
+  let ridges = [];                // 4 baked offscreen tiles
+  let dpr = 1;
+
+  /* value noise + fbm: cheap, smooth, stable frame to frame */
+  const PERM = new Uint8Array(512);
+  (() => {
+    const p = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) p[i] = i;
+    let seed = 1337;
+    for (let i = 255; i > 0; i--){
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      const j = seed % (i + 1);
+      const t = p[i]; p[i] = p[j]; p[j] = t;
+    }
+    for (let i = 0; i < 512; i++) PERM[i] = p[i & 255];
+  })();
+  const smooth = t => t * t * (3 - 2 * t);
+  function vnoise(x){
+    const i = Math.floor(x), f = x - i;
+    return lerp(PERM[i & 255] / 255, PERM[(i + 1) & 255] / 255, smooth(f));
+  }
+  function fbm(x){
+    let v = 0, amp = .5, fr = 1;
+    for (let o = 0; o < 4; o++){ v += vnoise(x * fr) * amp; amp *= .5; fr *= 2.05; }
+    return v;
+  }
+
+  /* grain tile, generated once and handed to CSS */
+  (() => {
+    const g = document.createElement("canvas");
+    g.width = g.height = 170;
+    const c = g.getContext("2d");
+    const img = c.createImageData(170, 170);
+    for (let i = 0; i < img.data.length; i += 4){
+      const v = 118 + (Math.random() * 74 - 37);
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+      img.data[i + 3] = 255;
+    }
+    c.putImageData(img, 0, 0);
+    document.getElementById("grain").style.backgroundImage = `url(${g.toDataURL()})`;
+  })();
+
+  const motes = Array.from({ length: 26 }, () => ({
+    x: Math.random(), y: Math.random(),
+    r: 3 + Math.random() * 9,
+    sp: .004 + Math.random() * .011,
+    ph: Math.random() * Math.PI * 2,
+    a: .12 + Math.random() * .3,
+  }));
+
+  /* bake one ridge band into a tile DRIFT px wider than the screen */
+  function bakeRidge({ yBase, amp, freq, seed, top, bottom, blur }){
+    const W = Math.ceil(st.w + DRIFT), H = Math.ceil(st.h);
+    const cv = document.createElement("canvas");
+    cv.width  = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    const c = cv.getContext("2d");
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (blur) c.filter = `blur(${blur}px)`;
+
+    c.beginPath();
+    c.moveTo(-12, H + 20);
+    for (let x = -12; x <= W + 12; x += 4){
+      const n = fbm(x * freq + seed);
+      const spine = Math.pow(Math.abs(Math.sin(x * freq * .55 + seed * .8)), 1.7);
+      c.lineTo(x, yBase - (n * amp + spine * amp * .75));
+    }
+    c.lineTo(W + 12, H + 20);
+    c.closePath();
+
+    const g = c.createLinearGradient(0, yBase - amp * 1.7, 0, H);
+    g.addColorStop(0, top);
+    g.addColorStop(1, bottom);
+    c.fillStyle = g;
+    c.fill();
+    return cv;
+  }
+
+  /* The summit the cone stands on. Unlike the ridge bands this one does NOT
+     drift: its crest is pinned to the cone's base, so the cone never floats
+     off its own mountain. A gaussian guarantees the peak is under the cone;
+     fbm only roughens it. */
+  function bakeSummit(){
+    const W = Math.ceil(st.w), H = Math.ceil(st.h);
+    const cv = document.createElement("canvas");
+    cv.width  = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    const c = cv.getContext("2d");
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const crest = st.coneBaseY - 8;
+    /* the mountain's height is bounded relative to the crest, so a tall
+       narrow screen gets a hill rather than a black cone */
+    const foot  = Math.min(H * 1.12, crest + H * st.L.summitDrop + H * .1);
+    const half  = Math.max(150, st.w * st.L.summitHalf);
+
+    const pts = [];
+    for (let x = -12; x <= W + 12; x += 4){
+      const u = (x - W / 2) / half;
+      const bump = Math.exp(-u * u * 1.9);
+      /* two scales of roughness: broad shoulders plus a broken crest,
+         otherwise the gaussian reads as a smooth paper cone */
+      const rough = (fbm(x * .014 + 77) - .5) * H * .17
+                  + (fbm(x * .058 + 310) - .5) * H * .04;
+      pts.push([x, foot - (foot - crest) * bump + rough * (.3 + .7 * bump)]);
+    }
+
+    c.beginPath();
+    c.moveTo(-12, H + 20);
+    for (const [x, y] of pts) c.lineTo(x, y);
+    c.lineTo(W + 12, H + 20);
+    c.closePath();
+    const g = c.createLinearGradient(0, crest, 0, H);
+    g.addColorStop(0, PAL.ridges[2][0]);
+    g.addColorStop(1, PAL.ridges[2][1]);
+    c.fillStyle = g;
+    c.fill();
+
+    /* rim light picks the crest out of the backdrop */
+    c.beginPath();
+    pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y));
+    c.strokeStyle = "rgba(198, 212, 148, .17)";
+    c.lineWidth = 1.6;
+    c.stroke();
+    return cv;
+  }
+
+  function bake(){
+    const H = st.h;
+    ridges = [
+      /* far range — soft, slow, and it sits BEHIND the cone */
+      bakeRidge({ yBase: H * .88, amp: H * .12, freq: .011, seed: 0,
+                  top: PAL.ridges[0][0], bottom: PAL.ridges[0][1], blur: 5 }),
+      bakeRidge({ yBase: H * .99, amp: H * .09, freq: .017, seed: 41,
+                  top: PAL.ridges[1][0], bottom: PAL.ridges[1][1], blur: 2 }),
+      /* the summit, then one front mound that laps over its foot */
+      bakeSummit(),
+      bakeRidge({ yBase: H * 1.30, amp: H * .30, freq: .013, seed: 305,
+                  top: PAL.ridges[3][0], bottom: PAL.ridges[3][1], blur: 0 }),
+    ];
+
+    /* vignette, also static */
+    vigCv.width  = Math.round(st.w * dpr);
+    vigCv.height = Math.round(st.h * dpr);
+    const c = vigCv.getContext("2d");
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.clearRect(0, 0, st.w, st.h);
+    const v = c.createRadialGradient(
+      st.w * .5, st.h * .42, Math.min(st.w, st.h) * .22,
+      st.w * .5, st.h * .5,  Math.max(st.w, st.h) * .78);
+    v.addColorStop(0, rgba(hexToRgb(PAL.vignette), 0));
+    v.addColorStop(.55, rgba(hexToRgb(PAL.vignette), .3));
+    v.addColorStop(1, rgba(hexToRgb(PAL.vignette), .88));
+    c.fillStyle = v;
+    c.fillRect(0, 0, st.w, st.h);
+  }
+
+  function resizeCanvas(){
+    if (!st.w || !st.h) return;
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    for (const c of [far, near]){
+      c.width  = Math.round(st.w * dpr);
+      c.height = Math.round(st.h * dpr);
+      c.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    lightCv.width  = Math.max(2, Math.round(st.w / LIGHT_DIV));
+    lightCv.height = Math.max(2, Math.round(st.h / LIGHT_DIV));
+    bake();
+  }
+
+  /* the light field: wash + four drifting lobes + the flavour bloom */
+  function drawLight(t){
+    const W = lightCv.width, H = lightCv.height;
+    const A = st.accent;
+
+    const wash = lightCx.createLinearGradient(0, 0, 0, H);
+    wash.addColorStop(0,   PAL.washA);
+    wash.addColorStop(.42, PAL.washB);
+    wash.addColorStop(1,   PAL.washC);
+    lightCx.globalCompositeOperation = "source-over";
+    lightCx.fillStyle = wash;
+    lightCx.fillRect(0, 0, W, H);
+
+    lightCx.globalCompositeOperation = "screen";
+    const lobes = [
+      [.30, .26, .52, 0.00],
+      [.72, .18, .44, 1.90],
+      [.52, .58, .62, 3.40],
+      [.14, .70, .40, 5.10],
+    ];
+    lobes.forEach(([bx, by, br, ph], i) => {
+      const cx = (bx + Math.sin(t * .00013 + ph) * .07) * W;
+      const cy = (by + Math.cos(t * .00017 + ph * 1.3) * .05) * H;
+      const rr = br * Math.max(W, H) * (.9 + Math.sin(t * .00021 + ph) * .08);
+      const g = lightCx.createRadialGradient(cx, cy, 0, cx, cy, rr);
+      g.addColorStop(0, PAL.lobes[i]);
+      g.addColorStop(1, "rgba(0,0,0,0)");
+      lightCx.fillStyle = g;
+      lightCx.fillRect(0, 0, W, H);
+    });
+
+    /* bloom behind the cone, tinted by whatever is chosen */
+    const bx = W * .5, by = H * st.L.coneY - H * .06;
+    const br = Math.max(W, H) * (.36 + Math.sin(t * .0004) * .012);
+    const bg = lightCx.createRadialGradient(bx, by, 0, bx, by, br);
+    bg.addColorStop(0,   rgba(A, .30));
+    bg.addColorStop(.45, rgba(A, .09));
+    bg.addColorStop(1,   "rgba(0,0,0,0)");
+    lightCx.fillStyle = bg;
+    lightCx.fillRect(0, 0, W, H);
+    lightCx.globalCompositeOperation = "source-over";
+  }
+
+  function drawFar(t){
+    if (!ridges.length) return;
+    const W = st.w, H = st.h;
+    drawLight(t);
+
+    fx.clearRect(0, 0, W, H);
+    fx.imageSmoothingEnabled = true;
+    fx.drawImage(lightCv, 0, 0, W, H);
+
+    /* parallax: each tile slides at its own rate */
+    fx.drawImage(ridges[0], -((t * .0016) % DRIFT), 0, W + DRIFT, H);
+    fx.drawImage(ridges[1], -((t * .0029) % DRIFT), 0, W + DRIFT, H);
+    fx.drawImage(vigCv, 0, 0, W, H);
+  }
+
+  function drawNear(t){
+    if (!ridges.length) return;
+    const W = st.w, H = st.h;
+    nx.clearRect(0, 0, W, H);
+    nx.drawImage(ridges[2], 0, 0, W, H);                              // pinned summit
+    nx.drawImage(ridges[3], -((t * .0014) % DRIFT), 0, W + DRIFT, H); // drifting front
+
+    /* dust catching the light */
+    nx.save();
+    nx.globalCompositeOperation = "screen";
+    for (const m of motes){
+      const px = mod(m.x + Math.sin(t * .0003 + m.ph) * .012, 1) * W;
+      const py = mod(m.y - t * m.sp * .00004, 1) * H;
+      const g = nx.createRadialGradient(px, py, 0, px, py, m.r);
+      g.addColorStop(0, `rgba(240,244,214,${m.a})`);
+      g.addColorStop(1, "rgba(240,244,214,0)");
+      nx.fillStyle = g;
+      nx.beginPath();
+      nx.arc(px, py, m.r, 0, Math.PI * 2);
+      nx.fill();
+    }
+    nx.restore();
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     8. LOOP
+     ═══════════════════════════════════════════════════════════ */
+  let last = performance.now(), auto = 0, frame = 0, running = false;
+
+  function tick(now){
+    if (!running) return;
+    const dt = Math.min(.05, (now - last) / 1000);
+    last = now;
+
+    if (st.intro < 1) st.intro = Math.min(1, st.intro + dt / 1.05);
+    const eased = 1 - Math.pow(1 - st.intro, 3);
+
+    /* spring the wheel toward its target slot */
+    if (!st.dragging){
+      const d = st.target - st.pos;
+      st.vel += d * 168 * dt;
+      st.vel *= Math.pow(.0009, dt);
+      st.pos += st.vel * dt;
+      if (Math.abs(d) < .0004 && Math.abs(st.vel) < .01){
+        st.pos = st.target;
+        st.vel = 0;
+      }
+    }
+
+    layoutCards(eased);
+    paintScoops(dt);
+
+    if (reduced){
+      if (frame === 0){ drawFar(0); drawNear(0); }
+    } else {
+      drawFar(now);
+      if (frame % 2 === 0) drawNear(now);   // half rate is plenty for dust
+    }
+    frame++;
+
+    /* gentle auto-advance until the visitor takes over */
+    if (!reduced && !st.userTouched){
+      auto += dt;
+      if (auto > 4.2){ auto = 0; select(st.selected + 1, { fromUser: false }); }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function start(){
+    if (running) return;
+    running = true;
+    last = performance.now();
+    requestAnimationFrame(tick);
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     9. INPUT
+     ═══════════════════════════════════════════════════════════ */
+  cards.forEach(c => c.addEventListener("click", () => select(+c.dataset.i)));
+
+  ring.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight"){ select(st.selected + 1); e.preventDefault(); }
+    else if (e.key === "ArrowLeft"){ select(st.selected - 1); e.preventDefault(); }
+  });
+
+  let dragX = 0, dragPos = 0, pid = null;
+  ring.addEventListener("pointerdown", e => {
+    if (e.target.closest(".fcard")) return;   // let the button take it
+    pid = e.pointerId;
+    ring.setPointerCapture(pid);
+    st.dragging = true;
+    st.userTouched = true;
+    ring.classList.add("is-dragging");
+    dragX = e.clientX;
+    dragPos = st.pos;
+  });
+  ring.addEventListener("pointermove", e => {
+    if (!st.dragging || e.pointerId !== pid) return;
+    const perSlot = Math.sin(st.L.step) * st.L.radius * st.scale;
+    st.pos = dragPos - (e.clientX - dragX) / perSlot;
+  });
+  function endDrag(){
+    if (!st.dragging) return;
+    st.dragging = false;
+    ring.classList.remove("is-dragging");
+    select(Math.round(st.pos));
+  }
+  ring.addEventListener("pointerup", endDrag);
+  ring.addEventListener("pointercancel", endDrag);
+
+  let wheelLock = 0;
+  screen.addEventListener("wheel", e => {
+    if (Math.abs(e.deltaX) < Math.abs(e.deltaY) * 1.2) return;  // leave vertical alone
+    e.preventDefault();
+    const now = performance.now();
+    if (now - wheelLock < 260) return;
+    wheelLock = now;
+    select(st.selected + Math.sign(e.deltaX));
+  }, { passive: false });
+
+  chipEl.addEventListener("click", () => {
+    const f = FLAVOURS[st.selected];
+    chipEl.animate([
+      { transform: "translateX(-50%) scale(1)" },
+      { transform: "translateX(-50%) scale(.9)" },
+      { transform: "translateX(-50%) scale(1)" },
+    ], { duration: reduced ? 1 : 320, easing: "cubic-bezier(.16,1,.3,1)" });
+    chipEl.setAttribute("aria-label", `${f.name}, ${f.price} — добавлено в заказ`);
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) running = false;
+    else start();
+  });
+
+  /* ═══════════════════════════════════════════════════════════
+     10. BOOT
+     ═══════════════════════════════════════════════════════════ */
+  new ResizeObserver(() => {
+    measure();
+    resizeCanvas();
+    layoutCards(1 - Math.pow(1 - st.intro, 3));
+    if (reduced){ drawFar(0); drawNear(0); }
+  }).observe(screen);
+
+  measure();
+  resizeCanvas();
+  select(0, { fromUser: false });
+  layoutCards(st.intro);
+  start();
+
+  /* let the first frame paint, then release the intro cascade */
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.documentElement.classList.add("is-ready");
+  }));
+})();
+</script>
