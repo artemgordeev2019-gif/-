@@ -100,6 +100,15 @@ body{
 }
 
 img, svg{ display: block; max-width: 100%; }
+/* When build/build.py finds a real photo for a slot it swaps the
+   placeholder <div> for an <img> carrying the same classes — these
+   rules make the image fill that slot the way the div did. */
+img.hero-photo-inner, img.detail-tile-bg, img.photo, img.master-avatar{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+img.master-avatar{ width: 84px; height: 84px; }
 a{ color: inherit; }
 h1, h2, h3, p{ margin: 0; }
 ul{ margin: 0; padding: 0; list-style: none; }
@@ -1097,9 +1106,10 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
         С ХАРАКТЕРОМ
       </h1>
 
-      <figure class="hero-photo frame on-dark" aria-hidden="true">
+      <figure class="hero-photo frame on-dark">
         <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
-        <div class="hero-photo-inner">
+        
+        <div class="hero-photo-inner" aria-hidden="true">
           <svg viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice">
             <g fill="none" stroke="rgba(15,6,25,.32)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M120 150c-6-36 10-64 40-78 34-16 70-2 82 24 10 22 2 46-18 60-24 17-58 15-78-6"/>
@@ -1111,6 +1121,7 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
             </g>
           </svg>
         </div>
+        
         <figcaption class="hero-photo-caption">кадр из портфолио появится здесь</figcaption>
       </figure>
 
@@ -1137,36 +1148,41 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
       <div class="detail-strip">
         <figure class="detail-tile frame on-dark d1">
           <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
-          <div class="detail-tile-bg">
+          
+          <div class="detail-tile-bg" aria-hidden="true">
             <svg viewBox="0 0 60 60" fill="none" stroke="#2A2418" stroke-width="1.6" stroke-linecap="round"><path d="M30 10c9 6 13 15 13 23a13 13 0 0 1-26 0c0-8 4-17 13-23Z"/></svg>
           </div>
+          
           <figcaption class="detail-cap">цвет</figcaption>
         </figure>
         <span class="detail-sep" aria-hidden="true">+</span>
         <figure class="detail-tile frame on-dark d2">
           <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
-          <div class="detail-tile-bg">
+          
+          <div class="detail-tile-bg" aria-hidden="true">
             <svg viewBox="0 0 60 60" fill="none" stroke="#2A2418" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 40c-4-16 2-27 10-32 8 5 14 16 10 32-3 4-17 4-20 0Z"/><path d="M24 20c2-4 8-6 12-4"/></svg>
           </div>
+          
           <figcaption class="detail-cap">форма</figcaption>
         </figure>
         <span class="detail-sep" aria-hidden="true">+</span>
         <figure class="detail-tile frame on-dark d3">
           <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
-          <div class="detail-tile-bg">
+          
+          <div class="detail-tile-bg" aria-hidden="true">
             <svg viewBox="0 0 60 60" fill="none" stroke="#2A2418" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="30" cy="24" r="11"/><path d="M22 33 14 47M38 33l8 14M22 47h16"/></svg>
           </div>
+          
           <figcaption class="detail-cap">уход</figcaption>
         </figure>
       </div>
     </div>
   </section>
 
-  <!-- Портфолио: полароид-рамки с плейсхолдер-градиентом вместо фото —
-       файлов с реальными кадрами пока нет. Как только придут вырезки
-       из Instagram, замените .photo (div) на <img class="photo p1"
-       src="..." alt="..."> внутри того же .polaroid — рамка, скотч и
-       подпись останутся как есть. -->
+  <!-- Портфолио: пока в рамках плейсхолдер-градиент. Чтобы появились
+       реальные кадры, положите work-1..work-6 в references/ и запустите
+       build/build.py — он сам подставит их в слоты @IMG ниже. Рамка,
+       скотч и подпись при этом не меняются. -->
   <section id="gallery" aria-labelledby="galleryTitle">
     <div class="container">
       <div class="section-head center" data-reveal>
@@ -1175,12 +1191,12 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
         <p class="section-lede">Здесь будет живая лента работ — пришлите фото, и мы соберём витрину под цвет каждого сезона.</p>
       </div>
       <div class="gallery-grid" data-reveal>
-        <figure class="polaroid"><div class="tape"></div><div class="photo p1"></div><figcaption class="cap">орхидея</figcaption></figure>
-        <figure class="polaroid"><div class="tape"></div><div class="photo p2"></div><figcaption class="cap">блаш</figcaption></figure>
-        <figure class="polaroid"><div class="tape"></div><div class="photo p3"></div><figcaption class="cap">шампань</figcaption></figure>
-        <figure class="polaroid"><div class="tape"></div><div class="photo p4"></div><figcaption class="cap">ночной ирис</figcaption></figure>
-        <figure class="polaroid"><div class="tape"></div><div class="photo p5"></div><figcaption class="cap">фуксия</figcaption></figure>
-        <figure class="polaroid"><div class="tape"></div><div class="photo p6"></div><figcaption class="cap">лавандовый дым</figcaption></figure>
+        <figure class="polaroid"><div class="tape"></div><div class="photo p1" aria-hidden="true"></div><figcaption class="cap">орхидея</figcaption></figure>
+        <figure class="polaroid"><div class="tape"></div><div class="photo p2" aria-hidden="true"></div><figcaption class="cap">блаш</figcaption></figure>
+        <figure class="polaroid"><div class="tape"></div><div class="photo p3" aria-hidden="true"></div><figcaption class="cap">шампань</figcaption></figure>
+        <figure class="polaroid"><div class="tape"></div><div class="photo p4" aria-hidden="true"></div><figcaption class="cap">ночной ирис</figcaption></figure>
+        <figure class="polaroid"><div class="tape"></div><div class="photo p5" aria-hidden="true"></div><figcaption class="cap">фуксия</figcaption></figure>
+        <figure class="polaroid"><div class="tape"></div><div class="photo p6" aria-hidden="true"></div><figcaption class="cap">лавандовый дым</figcaption></figure>
       </div>
     </div>
   </section>
