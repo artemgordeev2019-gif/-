@@ -1,1 +1,3 @@
 node_modules/
+# Local copy of the ui-ux-pro-max skill (tooling, not a project asset)
+.claude/
