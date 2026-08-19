@@ -151,7 +151,12 @@ h2.section-title{
 .section-head.center{ text-align: center; margin-inline: auto; }
 .section-head.center .section-lede{ margin-inline: auto; }
 
+/* a "back-out" overshoot curve — the spring that makes hover/press read
+   as playful rather than corporate-smooth */
+:root{ --ease-pop: cubic-bezier(.34, 1.56, .64, 1); }
+
 .btn{
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -166,15 +171,43 @@ h2.section-title{
   letter-spacing: .01em;
   text-decoration: none;
   cursor: pointer;
+  overflow: hidden;
+  isolation: isolate;
   transition: background .25s var(--ease-out), border-color .25s var(--ease-out),
-              transform .2s var(--ease-out), box-shadow .25s var(--ease-out);
+              transform .35s var(--ease-pop), box-shadow .3s var(--ease-out);
 }
+.btn::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.4) 46%, transparent 62%);
+  transform: translateX(-120%);
+  transition: transform .6s var(--ease-out);
+}
+.btn:hover{ transform: translateY(-2px) scale(1.035) rotate(-1deg); }
+.btn:hover::before{ transform: translateX(120%); }
+.btn:active{ transform: translateY(0) scale(.94) rotate(0deg); transition-duration: .12s; }
+.btn .spark{
+  width: 14px; height: 14px;
+  flex: 0 0 auto;
+  opacity: 0;
+  transform: scale(.3) rotate(-25deg);
+  transition: opacity .3s var(--ease-pop), transform .4s var(--ease-pop);
+}
+.btn:hover .spark{ opacity: 1; transform: scale(1) rotate(0deg); }
+
 .btn-primary{
   background: linear-gradient(135deg, var(--violet), var(--violet-dp));
   color: var(--porcelain);
   box-shadow: 0 14px 30px -14px rgba(139, 79, 214, .65);
+  animation: breathe 3.2s ease-in-out infinite;
 }
-.btn-primary:hover{ transform: translateY(-1px); box-shadow: 0 18px 36px -14px rgba(139, 79, 214, .8); }
+.btn-primary:hover{ box-shadow: 0 20px 38px -14px rgba(231, 155, 219, .75); }
+@keyframes breathe{
+  0%, 100%{ box-shadow: 0 14px 30px -14px rgba(139, 79, 214, .65); }
+  50%{ box-shadow: 0 14px 34px -12px rgba(231, 155, 219, .55); }
+}
 .btn-ghost{
   background: rgba(248, 240, 250, .04);
   border-color: var(--line-strong);
@@ -182,6 +215,11 @@ h2.section-title{
 }
 .btn-ghost:hover{ background: rgba(248, 240, 250, .09); border-color: var(--orchid); }
 .btn-sm{ min-height: 40px; padding: 0 18px; font-size: 13.5px; }
+
+@media (prefers-reduced-motion: reduce){
+  .btn, .btn::before, .btn .spark{ transition: none !important; animation: none !important; }
+  .btn:hover, .btn:active{ transform: none; }
+}
 
 /* ═══════════════════════════════════════════════════════════════
    HEADER
@@ -366,6 +404,49 @@ h2.section-title{
   .hero-bg .blob{ animation: none; }
 }
 
+/* drifting sparkles/hearts — the bit of naive, handmade whimsy that
+   keeps the moody palette from reading as strictly corporate-premium */
+.sparkle-field{ position: absolute; inset: 0; overflow: hidden; }
+.sparkle{
+  position: absolute;
+  bottom: -8%;
+  width: var(--sz, 14px);
+  height: var(--sz, 14px);
+  color: var(--sparkle-c, var(--orchid));
+  opacity: 0;
+  animation: floaty var(--dur, 9s) ease-in var(--delay, 0s) infinite;
+}
+@keyframes floaty{
+  0%{ transform: translateY(0) rotate(0deg); opacity: 0; }
+  10%{ opacity: .8; }
+  85%{ opacity: .55; }
+  100%{ transform: translateY(-115vh) rotate(50deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce){
+  .sparkle{ display: none; }
+}
+
+/* a hand-stuck sticker — the kind of tilted circular badge you'd
+   see washi-taped into a scrapbook */
+.sticker{
+  position: absolute;
+  top: 14%;
+  right: clamp(10px, 6vw, 90px);
+  z-index: 2;
+  width: clamp(84px, 9vw, 108px);
+  height: clamp(84px, 9vw, 108px);
+  transform: rotate(-9deg);
+  animation: wobble 6s ease-in-out infinite;
+  filter: drop-shadow(0 10px 18px rgba(15, 6, 25, .5));
+}
+.sticker svg{ width: 100%; height: 100%; }
+@keyframes wobble{
+  0%, 100%{ transform: rotate(-9deg); }
+  50%{ transform: rotate(-3deg); }
+}
+@media (max-width: 700px){ .sticker{ display: none; } }
+@media (prefers-reduced-motion: reduce){ .sticker{ animation: none; } }
+
 .hero-inner{
   max-width: 1180px;
   margin-inline: auto;
@@ -443,39 +524,79 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
 .gallery-grid{
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--gap);
+  gap: clamp(28px, 4vw, 44px) var(--gap);
+  padding-top: 16px;
 }
-.swatch{
+/* Polaroid-style cutouts: a paper frame tilted like it was washi-taped
+   into a scrapbook, ready to take real Instagram crops — swap the
+   background on .photo for a real <img> once photos arrive. */
+.polaroid{
   position: relative;
-  aspect-ratio: 4 / 5;
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  border: 1px solid var(--line);
+  padding: 10px 10px 30px;
+  background: var(--porcelain);
+  border-radius: 6px;
+  box-shadow: 0 16px 30px -14px rgba(8, 3, 14, .6);
+  transform: rotate(var(--r, -4deg));
+  transition: transform .45s var(--ease-pop), box-shadow .3s var(--ease-out);
+  cursor: default;
 }
-.swatch::after{
+.polaroid:hover{
+  transform: rotate(0deg) scale(1.06) translateY(-6px);
+  box-shadow: 0 26px 40px -16px rgba(8, 3, 14, .7);
+  z-index: 3;
+}
+.polaroid:nth-child(1){ --r: -5deg; }
+.polaroid:nth-child(2){ --r: 3deg; }
+.polaroid:nth-child(3){ --r: -2deg; }
+.polaroid:nth-child(4){ --r: 4deg; }
+.polaroid:nth-child(5){ --r: -3deg; }
+.polaroid:nth-child(6){ --r: 2deg; }
+.polaroid .tape{
+  position: absolute;
+  top: -11px; left: 50%;
+  width: 58px; height: 20px;
+  transform: translateX(-50%) rotate(-4deg);
+  background: repeating-linear-gradient(115deg, rgba(255,255,255,.55) 0 4px, rgba(255,255,255,.32) 4px 8px);
+  border: 1px solid rgba(255,255,255,.5);
+  box-shadow: 0 3px 6px rgba(0,0,0,.25);
+}
+.polaroid .photo{
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.polaroid .photo::after{
   content: "";
   position: absolute; inset: 0;
-  background: linear-gradient(155deg, rgba(255,255,255,.28), transparent 42%),
-              linear-gradient(0deg, rgba(15,6,25,.45), transparent 40%);
+  background: linear-gradient(155deg, rgba(255,255,255,.3), transparent 45%),
+              linear-gradient(0deg, rgba(15,6,25,.35), transparent 38%);
 }
-.swatch span{
-  position: absolute;
-  left: 16px; bottom: 14px;
-  z-index: 1;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: rgba(248, 240, 250, .85);
+.polaroid .cap{
+  display: block;
+  margin-top: 10px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--ink);
 }
-.swatch.s1{ background: linear-gradient(160deg, #B98CEA, #6A2FAE); }
-.swatch.s2{ background: linear-gradient(160deg, #F0BEE4, #C0679F); }
-.swatch.s3{ background: linear-gradient(160deg, #EAD7A6, #B4884A); }
-.swatch.s4{ background: linear-gradient(160deg, #7C6BC7, #2C1746); }
-.swatch.s5{ background: linear-gradient(160deg, #E7A6E0, #7E3FBE); }
-.swatch.s6{ background: linear-gradient(160deg, #D9C7E8, #5A3A78); }
+.photo.p1{ background: linear-gradient(160deg, #B98CEA, #6A2FAE); }
+.photo.p2{ background: linear-gradient(160deg, #F0BEE4, #C0679F); }
+.photo.p3{ background: linear-gradient(160deg, #EAD7A6, #B4884A); }
+.photo.p4{ background: linear-gradient(160deg, #7C6BC7, #2C1746); }
+.photo.p5{ background: linear-gradient(160deg, #E7A6E0, #7E3FBE); }
+.photo.p6{ background: linear-gradient(160deg, #D9C7E8, #5A3A78); }
 @media (max-width: 860px){ .gallery-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
-@media (max-width: 520px){ .gallery-grid{ grid-template-columns: 1fr 1fr; gap: 10px; } }
+@media (max-width: 520px){
+  .gallery-grid{ grid-template-columns: 1fr 1fr; gap: 22px 12px; }
+  .polaroid{ padding: 7px 7px 22px; }
+  .polaroid:nth-child(1){ --r: -3deg; } .polaroid:nth-child(2){ --r: 2deg; }
+  .polaroid:nth-child(3){ --r: -2deg; } .polaroid:nth-child(4){ --r: 3deg; }
+  .polaroid:nth-child(5){ --r: -2deg; } .polaroid:nth-child(6){ --r: 2deg; }
+}
+@media (prefers-reduced-motion: reduce){ .polaroid{ transition: none; } }
 
 /* ═══════════════════════════════════════════════════════════════
    SERVICES
@@ -501,8 +622,10 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
   font-family: var(--font-ui);
   font-size: 14px;
   font-weight: 600;
-  transition: background .25s var(--ease-out), color .25s var(--ease-out);
+  transition: background .25s var(--ease-out), color .25s var(--ease-out),
+              transform .3s var(--ease-pop);
 }
+.tab:active{ transform: scale(.92); }
 .tab[aria-selected="true"]{
   background: linear-gradient(135deg, var(--violet), var(--violet-dp));
   color: var(--porcelain);
@@ -746,7 +869,7 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
   </nav>
 
   <div class="header-actions">
-    <a class="btn btn-primary btn-sm" href="https://www.instagram.com/zefir.manicure/" target="_blank" rel="noopener">Записаться</a>
+    <a class="btn btn-primary btn-sm" href="https://www.instagram.com/zefir.manicure/" target="_blank" rel="noopener"><svg class="spark" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 1.5 12 8l6.5 2-6.5 2-2 6.5-2-6.5L1.5 10 8 8Z"/></svg>Записаться</a>
     <button class="burger" type="button" id="burgerBtn" aria-label="Открыть меню" aria-expanded="false" aria-controls="mobileNav">
       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 5.5h15M2.5 10h15M2.5 14.5h15"/></svg>
     </button>
@@ -763,7 +886,7 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
     <li><a href="#testimonials">Отзывы</a></li>
     <li><a href="#contact">Контакты</a></li>
   </ul>
-  <a class="btn btn-primary" href="https://www.instagram.com/zefir.manicure/" target="_blank" rel="noopener">Записаться в Direct</a>
+  <a class="btn btn-primary" href="https://www.instagram.com/zefir.manicure/" target="_blank" rel="noopener"><svg class="spark" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 1.5 12 8l6.5 2-6.5 2-2 6.5-2-6.5L1.5 10 8 8Z"/></svg>Записаться в Direct</a>
 </div>
 
 <main id="main">
@@ -774,13 +897,31 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
       <div class="blob blob-b"></div>
       <div class="blob blob-c"></div>
       <div class="grain"></div>
+      <div class="sparkle-field">
+        <svg class="sparkle" style="left:6%;--sz:12px;--dur:8.5s;--delay:0s;--sparkle-c:var(--orchid)" viewBox="0 0 20 20" fill="currentColor"><path d="M10 1.5 12 8l6.5 2-6.5 2-2 6.5-2-6.5L1.5 10 8 8Z"/></svg>
+        <svg class="sparkle" style="left:16%;--sz:9px;--dur:10.5s;--delay:1.4s;--sparkle-c:var(--gold)" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2c4 5 4.5 6 8 8-3.5 2-4 3-8 8-4-5-4.5-6-8-8 3.5-2 4-3 8-8Z"/></svg>
+        <svg class="sparkle" style="left:27%;--sz:15px;--dur:9.5s;--delay:3s;--sparkle-c:var(--blush)" viewBox="0 0 20 20" fill="currentColor"><path d="M10 17S2 12 2 6.8C2 4 4.2 2 6.8 2 8.4 2 9.6 2.8 10 4c.4-1.2 1.6-2 3.2-2C15.8 2 18 4 18 6.8 18 12 10 17 10 17Z"/></svg>
+        <svg class="sparkle" style="left:42%;--sz:10px;--dur:7.5s;--delay:.6s;--sparkle-c:var(--orchid)" viewBox="0 0 20 20" fill="currentColor"><path d="M10 1.5 12 8l6.5 2-6.5 2-2 6.5-2-6.5L1.5 10 8 8Z"/></svg>
+        <svg class="sparkle" style="left:58%;--sz:13px;--dur:11s;--delay:2.2s;--sparkle-c:var(--gold)" viewBox="0 0 20 20" fill="currentColor"><path d="M10 17S2 12 2 6.8C2 4 4.2 2 6.8 2 8.4 2 9.6 2.8 10 4c.4-1.2 1.6-2 3.2-2C15.8 2 18 4 18 6.8 18 12 10 17 10 17Z"/></svg>
+        <svg class="sparkle" style="left:69%;--sz:9px;--dur:8s;--delay:4s;--sparkle-c:var(--blush)" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2c4 5 4.5 6 8 8-3.5 2-4 3-8 8-4-5-4.5-6-8-8 3.5-2 4-3 8-8Z"/></svg>
+        <svg class="sparkle" style="left:80%;--sz:14px;--dur:9.8s;--delay:1.8s;--sparkle-c:var(--orchid)" viewBox="0 0 20 20" fill="currentColor"><path d="M10 17S2 12 2 6.8C2 4 4.2 2 6.8 2 8.4 2 9.6 2.8 10 4c.4-1.2 1.6-2 3.2-2C15.8 2 18 4 18 6.8 18 12 10 17 10 17Z"/></svg>
+        <svg class="sparkle" style="left:91%;--sz:11px;--dur:10s;--delay:.2s;--sparkle-c:var(--gold)" viewBox="0 0 20 20" fill="currentColor"><path d="M10 1.5 12 8l6.5 2-6.5 2-2 6.5-2-6.5L1.5 10 8 8Z"/></svg>
+      </div>
+    </div>
+    <div class="sticker" aria-hidden="true">
+      <svg viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="48" fill="var(--blush)"/>
+        <circle cx="50" cy="50" r="48" fill="none" stroke="var(--porcelain)" stroke-width="1.5" stroke-dasharray="2 5"/>
+        <path d="M50 66c-16-9-22-18-22-27a12 12 0 0 1 22-6 12 12 0 0 1 22 6c0 9-6 18-22 27Z" fill="var(--violet-dp)"/>
+        <text x="50" y="88" text-anchor="middle" font-family="Commissioner, sans-serif" font-size="8" font-weight="700" fill="var(--violet-dp)" letter-spacing="1">С ЛЮБОВЬЮ</text>
+      </svg>
     </div>
     <div class="hero-inner">
       <span class="eyebrow" style="justify-content:center">studio zefir</span>
       <h1>Небольшая роскошь<br>для твоих рук</h1>
       <p class="hero-sub">Маникюр и педикюр в фильмовых тонах: аккуратная работа, стойкое покрытие и атмосфера, в которую хочется возвращаться каждые три недели.</p>
       <div class="hero-cta">
-        <a class="btn btn-primary" href="https://www.instagram.com/zefir.manicure/" target="_blank" rel="noopener">Записаться в Direct</a>
+        <a class="btn btn-primary" href="https://www.instagram.com/zefir.manicure/" target="_blank" rel="noopener"><svg class="spark" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 1.5 12 8l6.5 2-6.5 2-2 6.5-2-6.5L1.5 10 8 8Z"/></svg>Записаться в Direct</a>
         <a class="btn btn-ghost" href="#services">Смотреть услуги и цены</a>
       </div>
       <div class="hero-features">
@@ -800,9 +941,11 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
     </div>
   </section>
 
-  <!-- Портфолио: плейсхолдер-плитки вместо реальных фото —
-       у нас нет файлов с фотографиями работ, только скрин-referансы
-       в переписке. Замените .swatch на <img> с реальными кадрами. -->
+  <!-- Портфолио: полароид-рамки с плейсхолдер-градиентом вместо фото —
+       файлов с реальными кадрами пока нет. Как только придут вырезки
+       из Instagram, замените .photo (div) на <img class="photo p1"
+       src="..." alt="..."> внутри того же .polaroid — рамка, скотч и
+       подпись останутся как есть. -->
   <section id="gallery" aria-labelledby="galleryTitle">
     <div class="container">
       <div class="section-head center" data-reveal>
@@ -811,12 +954,12 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
         <p class="section-lede">Здесь будет живая лента работ — пришлите фото, и мы соберём витрину под цвет каждого сезона.</p>
       </div>
       <div class="gallery-grid" data-reveal>
-        <div class="swatch s1"><span>орхидея</span></div>
-        <div class="swatch s2"><span>блаш</span></div>
-        <div class="swatch s3"><span>шампань</span></div>
-        <div class="swatch s4"><span>ночной ирис</span></div>
-        <div class="swatch s5"><span>фуксия</span></div>
-        <div class="swatch s6"><span>дымчатый лавандовый</span></div>
+        <figure class="polaroid"><div class="tape"></div><div class="photo p1"></div><figcaption class="cap">орхидея</figcaption></figure>
+        <figure class="polaroid"><div class="tape"></div><div class="photo p2"></div><figcaption class="cap">блаш</figcaption></figure>
+        <figure class="polaroid"><div class="tape"></div><div class="photo p3"></div><figcaption class="cap">шампань</figcaption></figure>
+        <figure class="polaroid"><div class="tape"></div><div class="photo p4"></div><figcaption class="cap">ночной ирис</figcaption></figure>
+        <figure class="polaroid"><div class="tape"></div><div class="photo p5"></div><figcaption class="cap">фуксия</figcaption></figure>
+        <figure class="polaroid"><div class="tape"></div><div class="photo p6"></div><figcaption class="cap">лавандовый дым</figcaption></figure>
       </div>
     </div>
   </section>
@@ -980,7 +1123,7 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
         <h2 class="section-title" id="contactTitle">Записаться проще всего в Direct</h2>
         <p class="section-lede" style="margin-inline:auto">Напишите желаемую услугу, дату и время — подберём удобный слот и мастера в течение дня.</p>
         <div class="contact-cta-row">
-          <a class="btn btn-primary" href="https://www.instagram.com/zefir.manicure/" target="_blank" rel="noopener">@zefir.manicure</a>
+          <a class="btn btn-primary" href="https://www.instagram.com/zefir.manicure/" target="_blank" rel="noopener"><svg class="spark" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 1.5 12 8l6.5 2-6.5 2-2 6.5-2-6.5L1.5 10 8 8Z"/></svg>@zefir.manicure</a>
           <a class="btn btn-ghost" href="https://www.instagram.com/zefir.beautystudio/" target="_blank" rel="noopener">@zefir.beautystudio</a>
         </div>
         <div class="contact-meta">
@@ -1012,7 +1155,7 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
 </footer>
 
 <div class="mobile-book-bar" id="mobileBookBar">
-  <a class="btn btn-primary" href="https://www.instagram.com/zefir.manicure/" target="_blank" rel="noopener">Записаться в Direct</a>
+  <a class="btn btn-primary" href="https://www.instagram.com/zefir.manicure/" target="_blank" rel="noopener"><svg class="spark" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 1.5 12 8l6.5 2-6.5 2-2 6.5-2-6.5L1.5 10 8 8Z"/></svg>Записаться в Direct</a>
 </div>
 
 <script>
