@@ -818,7 +818,8 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
    ═══════════════════════════════════════════════════════════════ */
 .masters-grid{
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 320px));
+  justify-content: center;
   gap: var(--gap);
 }
 .master-card{
@@ -859,8 +860,8 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
   font-size: 13.5px;
   color: var(--ink-soft);
 }
-@media (max-width: 860px){ .masters-grid{ grid-template-columns: 1fr 1fr; } }
-@media (max-width: 560px){ .masters-grid{ grid-template-columns: 1fr; max-width: 340px; margin-inline: auto; } }
+/* auto-fit already collapses to one column once two 240px tracks don't
+   fit side by side — no breakpoint math needed */
 
 /* ═══════════════════════════════════════════════════════════════
    TESTIMONIALS
@@ -1243,32 +1244,28 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
     </div>
   </section>
 
-  <!-- Мастера: имена и фото — плейсхолдер до получения реальных данных студии. -->
+  <!-- Мастера: имена, стаж и специализации реальные (из хайлайта студии
+       «Наши мастера»). Фото пока плейсхолдер-монограмма — тот же лимит
+       на получение файлов, см. zefir/references/README.md. -->
   <section id="masters" aria-labelledby="mastersTitle">
     <div class="container">
       <div class="section-head center" data-reveal>
         <span class="eyebrow" style="justify-content:center">команда</span>
         <h2 class="section-title" id="mastersTitle">Мастера студии</h2>
-        <p class="section-lede">Каждая работа — это встреча вкуса клиентки и почерка мастера. Раздел ждёт реальных имён и портфолио — пришлите, и мы обновим карточки.</p>
+        <p class="section-lede">Каждая работа — это встреча вкуса клиентки и почерка мастера.</p>
       </div>
       <div class="masters-grid" data-reveal>
         <article class="master-card">
-          <div class="master-avatar" aria-hidden="true">В</div>
-          <h3 class="master-name">Виктория</h3>
-          <div class="master-role">Мастер маникюра</div>
-          <p class="master-bio">Аккуратная классика и сложные дизайны, специализация — стойкое покрытие.</p>
+          <div class="master-avatar" aria-hidden="true">Л</div>
+          <h3 class="master-name">Лиза</h3>
+          <div class="master-role">Топ-мастер, руководитель студии · стаж 9+ лет</div>
+          <p class="master-bio">Гелевое укрепление, чёткие квадраты, идеальный френч. Отдельно предлагает аэрографию на процедуре.</p>
         </article>
         <article class="master-card">
-          <div class="master-avatar" aria-hidden="true">А</div>
-          <h3 class="master-name">Алина</h3>
-          <div class="master-role">Мастер педикюра</div>
-          <p class="master-bio">Аппаратный педикюр и уход за проблемными зонами, мягкая рука.</p>
-        </article>
-        <article class="master-card">
-          <div class="master-avatar" aria-hidden="true">М</div>
-          <h3 class="master-name">Марина</h3>
-          <div class="master-role">Мастер наращивания</div>
-          <p class="master-bio">Архитектура и коррекция формы, работает с самыми капризными ногтями.</p>
+          <div class="master-avatar" aria-hidden="true">Т</div>
+          <h3 class="master-name">Татьяна</h3>
+          <div class="master-role">Мастер маникюра · стаж 4 года</div>
+          <p class="master-bio">Красивая симметричная форма и прочные, элегантно-тонкие ноготки.</p>
         </article>
       </div>
     </div>
