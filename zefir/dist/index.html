@@ -38,43 +38,38 @@
 
 /* ═══════════════════════════════════════════════════════════════
    TOKENS
-   A warm, editorial daylight palette — cream paper, ink type, and
-   the brand's violet kept as an accent rather than the base. The
-   --*-ink variants exist because the bright decorative accents
-   (--orchid, --gold) don't clear 4.5:1 on cream, so any place they
-   carry TEXT uses the ink variant instead; the bright originals stay
-   for gradients, blobs, sparkles and borders, where contrast rules
-   don't apply.
-
-   .contact and .mobile-nav are a deliberate held-over dark "portal"
-   — a moment of the old cinematic-violet mood inside the light page
-   — so they locally re-declare --ink/--ink-soft/--panel/--line back
-   to light-on-dark values; everything nested inside just inherits
-   the override through the cascade.
+   Premium jewel-tone dark: near-black plum base, gold as the metal,
+   violet as the brand color, a deep wine accent for richness — no
+   beige/cream/light surfaces anywhere. --rose-ink/--gold-ink alias
+   straight to --orchid/--gold: on this dark base the bright
+   decorative accents already clear 4.5:1 as text, so unlike the
+   cream version they don't need a darkened stand-in — the aliases
+   just keep every call site that already reads var(--rose-ink)/
+   var(--gold-ink) working unchanged.
    ═══════════════════════════════════════════════════════════════ */
 :root{
-  --cream:      #F2ECE0;
-  --cream-deep: #E9DFCB;
-  --panel:      #FBF8F2;
-  --ink:        #2A2418;
-  --ink-soft:   #5C5546;
-  --line:        rgba(42, 36, 24, .14);
-  --line-strong: rgba(42, 36, 24, .30);
+  --cream:      #12081A;
+  --cream-deep: #1C0F26;
+  --panel:      #221331;
+  --ink:        #F5EEE9;
+  --ink-soft:   #C7B6D4;
+  --line:        rgba(216, 178, 107, .18);
+  --line-strong: rgba(216, 178, 107, .34);
 
-  /* decorative accents only — see --rose-ink / --gold-ink for text */
   --violet:     #8B4FD6;
   --violet-dp:  #6A2FAE;
   --orchid:     #E79BDB;
   --blush:      #F6D6EE;
   --gold:       #D8B26B;
+  --wine:       #7A1638;
 
-  --rose-ink: #96407C;
-  --gold-ink: #7C5A1F;
+  --rose-ink: var(--orchid);
+  --gold-ink: var(--gold);
   /* text/icons that sit ON TOP of a violet-gradient surface (buttons,
      the active tab) need to stay light regardless of the page theme */
   --on-accent: #F8F0FA;
-  --glass: rgba(42, 36, 24, .045);
-  --glass-hover: rgba(42, 36, 24, .09);
+  --glass: rgba(245, 238, 233, .05);
+  --glass-hover: rgba(245, 238, 233, .1);
 
   --r-lg: 28px;
   --r-md: 18px;
@@ -253,7 +248,7 @@ h2.section-title{
   justify-content: space-between;
   gap: 16px;
   padding: 16px var(--pad);
-  background: rgba(242, 236, 224, .68);
+  background: rgba(18, 8, 26, .6);
   backdrop-filter: blur(16px) saturate(1.2);
   -webkit-backdrop-filter: blur(16px) saturate(1.2);
   border-bottom: 1px solid transparent;
@@ -261,7 +256,7 @@ h2.section-title{
 }
 .site-header.is-scrolled{
   border-bottom-color: var(--line);
-  background: rgba(242, 236, 224, .92);
+  background: rgba(18, 8, 26, .88);
 }
 
 .wordmark{
@@ -318,12 +313,6 @@ h2.section-title{
 .burger svg{ width: 18px; height: 18px; }
 
 .mobile-nav{
-  /* same held-over dark "portal" override as .contact — a dramatic
-     fullscreen takeover reads fine regardless of the page's own theme */
-  --ink: #F8F0FA;
-  --line: rgba(248, 240, 250, .14);
-  --line-strong: rgba(248, 240, 250, .24);
-
   display: none;
   position: fixed;
   inset: 0;
@@ -376,42 +365,42 @@ h2.section-title{
 .hero-bg .wash{
   position: absolute; inset: 0;
   background:
-    radial-gradient(56% 44% at 86% 6%, rgba(231, 155, 219, .24), transparent 60%),
-    radial-gradient(60% 50% at 10% 96%, rgba(139, 79, 214, .16), transparent 60%),
-    var(--cream);
+    radial-gradient(58% 46% at 84% 6%, rgba(231, 155, 219, .18), transparent 60%),
+    radial-gradient(64% 52% at 8% 100%, rgba(122, 22, 56, .38), transparent 62%),
+    radial-gradient(90% 70% at 50% 40%, var(--cream-deep), var(--cream) 72%);
 }
 .hero-bg .blob{
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: .4;
+  filter: blur(75px);
+  opacity: .5;
   will-change: transform;
 }
 .hero-bg .blob-a{
   width: 40vw; height: 40vw; max-width: 560px; max-height: 560px;
   left: -12%; top: -10%;
-  background: radial-gradient(circle, var(--violet), transparent 72%);
+  background: radial-gradient(circle, var(--violet), transparent 70%);
   animation: driftA 26s ease-in-out infinite;
 }
 .hero-bg .blob-b{
   width: 32vw; height: 32vw; max-width: 460px; max-height: 460px;
   right: -8%; top: 6%;
-  background: radial-gradient(circle, var(--orchid), transparent 72%);
+  background: radial-gradient(circle, var(--orchid), transparent 70%);
   animation: driftB 32s ease-in-out infinite;
 }
 .hero-bg .blob-c{
   width: 30vw; height: 30vw; max-width: 420px; max-height: 420px;
   left: 20%; bottom: -16%;
-  background: radial-gradient(circle, var(--gold), transparent 74%);
-  opacity: .22;
+  background: radial-gradient(circle, var(--gold), transparent 72%);
+  opacity: .3;
   animation: driftC 30s ease-in-out infinite;
 }
 .hero-bg .grain{
   position: absolute; inset: -60px;
-  opacity: .035;
-  mix-blend-mode: multiply;
+  opacity: .06;
+  mix-blend-mode: overlay;
   background-image:
-    repeating-radial-gradient(circle at 20% 30%, rgba(42,36,24,.7) 0 1px, transparent 1px 3px);
+    repeating-radial-gradient(circle at 20% 30%, rgba(255,255,255,.6) 0 1px, transparent 1px 3px);
   background-size: 5px 5px;
 }
 @keyframes driftA{
@@ -440,11 +429,13 @@ h2.section-title{
   height: clamp(16px, 2.4vw, 26px);
   pointer-events: none;
 }
-.frame .corner.tl{ top: 10px; left: 10px; border-top: 2px solid var(--ink); border-left: 2px solid var(--ink); }
-.frame .corner.tr{ top: 10px; right: 10px; border-top: 2px solid var(--ink); border-right: 2px solid var(--ink); }
-.frame .corner.bl{ bottom: 10px; left: 10px; border-bottom: 2px solid var(--ink); border-left: 2px solid var(--ink); }
-.frame .corner.br{ bottom: 10px; right: 10px; border-bottom: 2px solid var(--ink); border-right: 2px solid var(--ink); }
-.frame.on-dark .corner{ border-color: var(--on-accent); }
+.frame .corner.tl{ top: 10px; left: 10px; border-top: 2px solid var(--gold); border-left: 2px solid var(--gold); }
+.frame .corner.tr{ top: 10px; right: 10px; border-top: 2px solid var(--gold); border-right: 2px solid var(--gold); }
+.frame .corner.bl{ bottom: 10px; left: 10px; border-bottom: 2px solid var(--gold); border-left: 2px solid var(--gold); }
+.frame .corner.br{ bottom: 10px; right: 10px; border-bottom: 2px solid var(--gold); border-right: 2px solid var(--gold); }
+/* .on-dark used to swap corner color for the two elements that already
+   sat on a dark fill; the whole page is dark now so the base gold
+   color already works everywhere — kept as a harmless no-op hook. */
 
 /* drifting sparkles/hearts — the bit of naive, handmade whimsy that
    keeps the moody palette from reading as strictly corporate-premium */
@@ -702,9 +693,9 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
   top: -11px; left: 50%;
   width: 58px; height: 20px;
   transform: translateX(-50%) rotate(-4deg);
-  background: repeating-linear-gradient(115deg, rgba(255,255,255,.55) 0 4px, rgba(255,255,255,.32) 4px 8px);
-  border: 1px solid rgba(255,255,255,.5);
-  box-shadow: 0 3px 6px rgba(0,0,0,.25);
+  background: repeating-linear-gradient(115deg, rgba(216,178,107,.55) 0 4px, rgba(216,178,107,.32) 4px 8px);
+  border: 1px solid rgba(216,178,107,.6);
+  box-shadow: 0 3px 6px rgba(0,0,0,.4);
 }
 .polaroid .photo{
   position: relative;
@@ -901,30 +892,51 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
 @media (max-width: 860px){ .testi-grid{ grid-template-columns: 1fr; max-width: 480px; margin-inline: auto; } }
 
 /* ═══════════════════════════════════════════════════════════════
+   TIPS
+   ═══════════════════════════════════════════════════════════════ */
+.tips-grid{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gap);
+}
+.tip-card{
+  padding: 28px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+}
+.tip-num{
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 30px;
+  color: var(--gold);
+}
+.tip-title{
+  margin-top: 8px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 21px;
+  color: var(--ink);
+}
+.tip-body{
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+@media (max-width: 860px){ .tips-grid{ grid-template-columns: 1fr; max-width: 480px; margin-inline: auto; } }
+
+/* ═══════════════════════════════════════════════════════════════
    CONTACT / CTA
    ═══════════════════════════════════════════════════════════════ */
-/* a deliberate held-over "portal" of the old cinematic-violet mood —
-   re-declares the shared tokens back to light-on-dark so every
-   descendant that reads var(--ink)/var(--panel)/etc. just inherits
-   the dark values through the cascade, with no per-rule overrides */
 .contact{
-  --ink: #F8F0FA;
-  --ink-soft: #CBB7D6;
-  --rose-ink: var(--orchid);
-  --gold-ink: var(--gold);
-  --panel: #241130;
-  --line: rgba(248, 240, 250, .12);
-  --line-strong: rgba(248, 240, 250, .24);
-  --glass: rgba(248, 240, 250, .08);
-  --glass-hover: rgba(248, 240, 250, .14);
-
   border-radius: var(--r-lg);
   padding: clamp(36px, 6vw, 64px);
   background:
-    radial-gradient(80% 120% at 15% 0%, rgba(139, 79, 214, .35), transparent 60%),
-    radial-gradient(70% 100% at 100% 100%, rgba(231, 155, 219, .22), transparent 60%),
+    radial-gradient(80% 120% at 15% 0%, rgba(139, 79, 214, .4), transparent 60%),
+    radial-gradient(70% 100% at 100% 100%, rgba(122, 22, 56, .45), transparent 62%),
     var(--panel);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   text-align: center;
 }
 .contact-cta-row{
@@ -985,7 +997,7 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
   left: 0; right: 0; bottom: 0;
   z-index: 40;
   padding: 12px var(--pad) calc(12px + env(safe-area-inset-bottom, 0px));
-  background: rgba(242, 236, 224, .92);
+  background: rgba(18, 8, 26, .9);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-top: 1px solid var(--line);
@@ -1316,6 +1328,37 @@ section{ padding: clamp(56px, 9vw, 108px) 0; }
           </div>
           <p class="testi-quote">«Записалась на архитектуру ногтя — сделали аккуратно и без боли, чего давно не встречала».</p>
           <div class="testi-name">Дарья В.</div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Советы: темы реальные (из постов студии в Instagram — «Табу перед
+       маникюром», «Почему появляются поломки», «Сниму сама!»), тексты
+       под ними — общие проверенные рекомендации по уходу, а не дословный
+       пересказ подписей (те были обрезаны на скринах кнопкой «ещё»). -->
+  <section id="tips" aria-labelledby="tipsTitle">
+    <div class="container">
+      <div class="section-head center" data-reveal>
+        <span class="eyebrow" style="justify-content:center">советы</span>
+        <h2 class="section-title" id="tipsTitle">Как продлить жизнь маникюру</h2>
+        <p class="section-lede">Отвечаем на вопросы, которые чаще всего разбираем в блоге студии.</p>
+      </div>
+      <div class="tips-grid" data-reveal>
+        <article class="tip-card">
+          <div class="tip-num">01</div>
+          <h3 class="tip-title">Табу перед визитом</h3>
+          <p class="tip-body">За пару дней до записи не увлекайтесь скрабами и жирными кремами для рук — кутикула станет более уязвимой. И не подпиливайте ногти сами: мастеру важно видеть их естественную длину и форму.</p>
+        </article>
+        <article class="tip-card">
+          <div class="tip-num">02</div>
+          <h3 class="tip-title">Почему ломаются ногти</h3>
+          <p class="tip-body">Чаще всего — из-за частого контакта с водой и бытовой химией без перчаток, недостатка укрепления в базе и привычки поддевать покрытие вместо того, чтобы аккуратно его размочить.</p>
+        </article>
+        <article class="tip-card">
+          <div class="tip-num">03</div>
+          <h3 class="tip-title">Можно ли снять гель-лак дома</h3>
+          <p class="tip-body">Можно, но без спешки: размочите ногти в тёплой воде 10–15 минут и никогда не поддевайте покрытие пилкой всухую — так снимается верхний слой самой ногтевой пластины, а не лак.</p>
         </article>
       </div>
     </div>
