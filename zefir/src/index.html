@@ -1,0 +1,1029 @@
+<title>zefir — студия маникюра и педикюра</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="zefir — студия маникюра и педикюра. Аккуратная работа, стойкое покрытие, запись в Instagram Direct.">
+
+<style>
+/*@FONTS@*/
+
+/* ═══════════════════════════════════════════════════════════════
+   TOKENS
+   A deliberately dark, cinematic palette: the brand is built to
+   read like a still from moody studio lighting, not a daylight
+   catalogue photo. No light-mode variant — the mood is the point.
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --ink-deep:   #0F0619;
+  --ink:        #170B22;
+  --panel:      #241130;
+  --panel-hi:   #301841;
+  --violet:     #8B4FD6;
+  --violet-dp:  #6A2FAE;
+  --violet-lt:  #C0A0EC;
+  --orchid:     #E79BDB;
+  --blush:      #F6D6EE;
+  --gold:       #D8B26B;
+  --porcelain:  #F8F0FA;
+  --porcelain-dim: #CBB7D6;
+  --line:        rgba(248, 240, 250, .12);
+  --line-strong: rgba(248, 240, 250, .24);
+
+  --r-lg: 28px;
+  --r-md: 18px;
+  --r-sm: 12px;
+  --r-pill: 999px;
+
+  --pad: clamp(20px, 5vw, 64px);
+  --gap: clamp(14px, 2.4vw, 28px);
+
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+
+  --font-display: 'Cormorant', Georgia, 'Iowan Old Style', serif;
+  --font-ui: 'Commissioner', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+*, *::before, *::after{ box-sizing: border-box; }
+html{ scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce){ html{ scroll-behavior: auto; } }
+
+body{
+  margin: 0;
+  background: var(--ink);
+  color: var(--porcelain);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+img, svg{ display: block; max-width: 100%; }
+a{ color: inherit; }
+h1, h2, h3, p{ margin: 0; }
+ul{ margin: 0; padding: 0; list-style: none; }
+button{ font: inherit; color: inherit; }
+
+.container{
+  max-width: 1180px;
+  margin-inline: auto;
+  padding-inline: var(--pad);
+}
+
+.skip-link{
+  position: absolute;
+  left: 12px; top: -60px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: var(--r-sm);
+  background: var(--porcelain);
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+  transition: top .25s var(--ease-out);
+}
+.skip-link:focus{ top: 12px; }
+
+:focus-visible{ outline: 2px solid var(--orchid); outline-offset: 3px; }
+
+.eyebrow{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--orchid);
+}
+.eyebrow::before{
+  content: "";
+  width: 16px; height: 1px;
+  background: currentColor;
+  opacity: .8;
+}
+
+h2.section-title{
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(30px, 4.2vw, 46px);
+  line-height: 1.08;
+  letter-spacing: -.01em;
+  color: var(--porcelain);
+  margin-top: 10px;
+}
+.section-lede{
+  max-width: 54ch;
+  margin-top: 14px;
+  color: var(--porcelain-dim);
+  font-size: 16px;
+}
+.section-head{ margin-bottom: clamp(32px, 5vw, 56px); }
+.section-head.center{ text-align: center; margin-inline: auto; }
+.section-head.center .section-lede{ margin-inline: auto; }
+
+.btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 26px;
+  border-radius: var(--r-pill);
+  border: 1px solid transparent;
+  font-family: var(--font-ui);
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .25s var(--ease-out), border-color .25s var(--ease-out),
+              transform .2s var(--ease-out), box-shadow .25s var(--ease-out);
+}
+.btn-primary{
+  background: linear-gradient(135deg, var(--violet), var(--violet-dp));
+  color: var(--porcelain);
+  box-shadow: 0 14px 30px -14px rgba(139, 79, 214, .65);
+}
+.btn-primary:hover{ transform: translateY(-1px); box-shadow: 0 18px 36px -14px rgba(139, 79, 214, .8); }
+.btn-ghost{
+  background: rgba(248, 240, 250, .04);
+  border-color: var(--line-strong);
+  color: var(--porcelain);
+}
+.btn-ghost:hover{ background: rgba(248, 240, 250, .09); border-color: var(--orchid); }
+.btn-sm{ min-height: 40px; padding: 0 18px; font-size: 13.5px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   HEADER
+   ═══════════════════════════════════════════════════════════════ */
+.site-header{
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px var(--pad);
+  background: rgba(15, 6, 25, .6);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border-bottom: 1px solid transparent;
+  transition: border-color .3s var(--ease-out), background .3s var(--ease-out);
+}
+.site-header.is-scrolled{
+  border-bottom-color: var(--line);
+  background: rgba(15, 6, 25, .86);
+}
+
+.wordmark{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--porcelain);
+}
+.wordmark .mark{ width: 34px; height: 34px; flex: 0 0 auto; }
+.wordmark .type{ display: flex; flex-direction: column; line-height: 1; }
+.wordmark .name{
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 25px;
+  letter-spacing: .01em;
+}
+.wordmark .sub{
+  margin-top: 3px;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--porcelain-dim);
+}
+
+.site-nav{
+  display: flex;
+  align-items: center;
+  gap: clamp(18px, 2.6vw, 34px);
+}
+.site-nav a{
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--porcelain-dim);
+  transition: color .2s var(--ease-out);
+}
+.site-nav a:hover{ color: var(--porcelain); }
+
+.header-actions{ display: flex; align-items: center; gap: 12px; }
+
+.burger{
+  display: none;
+  width: 44px; height: 44px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  background: transparent;
+  cursor: pointer;
+  place-items: center;
+  color: var(--porcelain);
+}
+.burger svg{ width: 18px; height: 18px; }
+
+.mobile-nav{
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(15, 6, 25, .97);
+  backdrop-filter: blur(10px);
+  padding: 90px var(--pad) 40px;
+}
+.mobile-nav.is-open{ display: block; }
+.mobile-nav ul{ display: grid; gap: 4px; }
+.mobile-nav a{
+  display: block;
+  padding: 16px 4px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--porcelain);
+}
+.mobile-nav .btn{ margin-top: 28px; width: 100%; }
+.mobile-close{
+  position: absolute;
+  top: 20px; right: var(--pad);
+  width: 44px; height: 44px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--porcelain);
+  cursor: pointer;
+  display: grid; place-items: center;
+}
+
+@media (max-width: 860px){
+  .site-nav{ display: none; }
+  .header-actions .btn{ display: none; }
+  .burger{ display: grid; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HERO
+   ═══════════════════════════════════════════════════════════════ */
+.hero{
+  position: relative;
+  overflow: hidden;
+  padding: clamp(56px, 11vw, 128px) var(--pad) clamp(48px, 8vw, 96px);
+  isolation: isolate;
+}
+.hero-bg{ position: absolute; inset: 0; z-index: -1; background: var(--ink-deep); }
+.hero-bg .wash{
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(58% 46% at 82% 8%, rgba(231, 155, 219, .22), transparent 60%),
+    radial-gradient(64% 52% at 12% 92%, rgba(139, 79, 214, .30), transparent 60%),
+    radial-gradient(90% 70% at 50% 40%, #1B0D2A, var(--ink-deep) 72%);
+}
+.hero-bg .blob{
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: .55;
+  will-change: transform;
+}
+.hero-bg .blob-a{
+  width: 46vw; height: 46vw; max-width: 640px; max-height: 640px;
+  left: -10%; top: -14%;
+  background: radial-gradient(circle, var(--violet), transparent 70%);
+  animation: driftA 26s ease-in-out infinite;
+}
+.hero-bg .blob-b{
+  width: 38vw; height: 38vw; max-width: 520px; max-height: 520px;
+  right: -8%; top: 10%;
+  background: radial-gradient(circle, var(--orchid), transparent 70%);
+  animation: driftB 32s ease-in-out infinite;
+}
+.hero-bg .blob-c{
+  width: 34vw; height: 34vw; max-width: 460px; max-height: 460px;
+  left: 22%; bottom: -18%;
+  background: radial-gradient(circle, var(--gold), transparent 72%);
+  opacity: .28;
+  animation: driftC 30s ease-in-out infinite;
+}
+.hero-bg .grain{
+  position: absolute; inset: -60px;
+  opacity: .05;
+  mix-blend-mode: overlay;
+  background-image:
+    repeating-radial-gradient(circle at 20% 30%, rgba(255,255,255,.6) 0 1px, transparent 1px 3px);
+  background-size: 5px 5px;
+}
+@keyframes driftA{
+  0%, 100%{ transform: translate(0, 0) scale(1); }
+  50%{ transform: translate(4%, 6%) scale(1.08); }
+}
+@keyframes driftB{
+  0%, 100%{ transform: translate(0, 0) scale(1); }
+  50%{ transform: translate(-5%, 4%) scale(1.05); }
+}
+@keyframes driftC{
+  0%, 100%{ transform: translate(0, 0) scale(1); }
+  50%{ transform: translate(3%, -5%) scale(1.1); }
+}
+@media (prefers-reduced-motion: reduce){
+  .hero-bg .blob{ animation: none; }
+}
+
+.hero-inner{
+  max-width: 1180px;
+  margin-inline: auto;
+  text-align: center;
+}
+.hero h1{
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(38px, 7vw, 84px);
+  line-height: 1.04;
+  letter-spacing: -.01em;
+  color: var(--porcelain);
+  text-wrap: balance;
+  max-width: 18ch;
+  margin: 22px auto 0;
+}
+.hero-sub{
+  max-width: 52ch;
+  margin: 24px auto 0;
+  color: var(--porcelain-dim);
+  font-size: clamp(16px, 1.6vw, 18.5px);
+}
+.hero-cta{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 34px;
+}
+
+.hero-features{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  max-width: 780px;
+  margin: clamp(44px, 7vw, 72px) auto 0;
+}
+.hero-feature{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: rgba(248, 240, 250, .03);
+  font-size: 13px;
+  color: var(--porcelain-dim);
+  text-align: left;
+}
+.hero-feature svg{ width: 20px; height: 20px; flex: 0 0 auto; color: var(--orchid); }
+@media (max-width: 640px){
+  .hero-features{ grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   REVEAL
+   ═══════════════════════════════════════════════════════════════ */
+[data-reveal]{
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity .6s var(--ease-out), transform .6s var(--ease-out);
+}
+[data-reveal].is-visible{ opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce){
+  [data-reveal]{ opacity: 1; transform: none; transition: none; }
+}
+
+section{ padding: clamp(56px, 9vw, 108px) 0; }
+
+/* ═══════════════════════════════════════════════════════════════
+   GALLERY (portfolio placeholder swatches)
+   ═══════════════════════════════════════════════════════════════ */
+.gallery-grid{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gap);
+}
+.swatch{
+  position: relative;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.swatch::after{
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(155deg, rgba(255,255,255,.28), transparent 42%),
+              linear-gradient(0deg, rgba(15,6,25,.45), transparent 40%);
+}
+.swatch span{
+  position: absolute;
+  left: 16px; bottom: 14px;
+  z-index: 1;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(248, 240, 250, .85);
+}
+.swatch.s1{ background: linear-gradient(160deg, #B98CEA, #6A2FAE); }
+.swatch.s2{ background: linear-gradient(160deg, #F0BEE4, #C0679F); }
+.swatch.s3{ background: linear-gradient(160deg, #EAD7A6, #B4884A); }
+.swatch.s4{ background: linear-gradient(160deg, #7C6BC7, #2C1746); }
+.swatch.s5{ background: linear-gradient(160deg, #E7A6E0, #7E3FBE); }
+.swatch.s6{ background: linear-gradient(160deg, #D9C7E8, #5A3A78); }
+@media (max-width: 860px){ .gallery-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 520px){ .gallery-grid{ grid-template-columns: 1fr 1fr; gap: 10px; } }
+
+/* ═══════════════════════════════════════════════════════════════
+   SERVICES
+   ═══════════════════════════════════════════════════════════════ */
+.tablist{
+  display: inline-flex;
+  gap: 4px;
+  padding: 5px;
+  border-radius: var(--r-pill);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  margin-bottom: clamp(28px, 4vw, 40px);
+}
+.tab{
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  min-height: 42px;
+  padding: 0 22px;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--porcelain-dim);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background .25s var(--ease-out), color .25s var(--ease-out);
+}
+.tab[aria-selected="true"]{
+  background: linear-gradient(135deg, var(--violet), var(--violet-dp));
+  color: var(--porcelain);
+}
+
+.service-panel{ display: none; }
+.service-panel.is-active{ display: block; }
+
+.service-list{ display: grid; gap: 10px; }
+.service-row{
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: rgba(248, 240, 250, .02);
+  transition: border-color .25s var(--ease-out), background .25s var(--ease-out);
+}
+.service-row:hover{ border-color: var(--line-strong); background: rgba(248, 240, 250, .045); }
+.service-main{ flex: 1 1 auto; min-width: 0; }
+.service-name{ font-size: 16px; font-weight: 500; color: var(--porcelain); }
+.service-dur{
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--porcelain-dim);
+}
+.service-price{
+  flex: 0 0 auto;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 19px;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.service-note{
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--porcelain-dim);
+}
+@media (max-width: 560px){
+  .service-row{ flex-wrap: wrap; }
+  .service-price{ order: 3; width: 100%; text-align: left; margin-top: 2px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MASTERS
+   ═══════════════════════════════════════════════════════════════ */
+.masters-grid{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gap);
+}
+.master-card{
+  padding: 28px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, rgba(248,240,250,.035), transparent);
+  text-align: center;
+}
+.master-avatar{
+  width: 84px; height: 84px;
+  margin-inline: auto;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 30px;
+  color: var(--porcelain);
+  background: conic-gradient(from 200deg, var(--violet), var(--orchid), var(--violet));
+}
+.master-name{
+  margin-top: 18px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 22px;
+}
+.master-role{
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--orchid);
+}
+.master-bio{
+  margin-top: 12px;
+  font-size: 13.5px;
+  color: var(--porcelain-dim);
+}
+@media (max-width: 860px){ .masters-grid{ grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px){ .masters-grid{ grid-template-columns: 1fr; max-width: 340px; margin-inline: auto; } }
+
+/* ═══════════════════════════════════════════════════════════════
+   TESTIMONIALS
+   ═══════════════════════════════════════════════════════════════ */
+.testi-grid{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gap);
+}
+.testi-card{
+  padding: 26px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+}
+.testi-stars{ display: flex; gap: 3px; color: var(--gold); }
+.testi-stars svg{ width: 15px; height: 15px; }
+.testi-quote{
+  margin-top: 16px;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 19px;
+  line-height: 1.4;
+  color: var(--porcelain);
+}
+.testi-name{
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--porcelain-dim);
+}
+@media (max-width: 860px){ .testi-grid{ grid-template-columns: 1fr; max-width: 480px; margin-inline: auto; } }
+
+/* ═══════════════════════════════════════════════════════════════
+   CONTACT / CTA
+   ═══════════════════════════════════════════════════════════════ */
+.contact{
+  border-radius: var(--r-lg);
+  padding: clamp(36px, 6vw, 64px);
+  background:
+    radial-gradient(80% 120% at 15% 0%, rgba(139, 79, 214, .35), transparent 60%),
+    radial-gradient(70% 100% at 100% 100%, rgba(231, 155, 219, .22), transparent 60%),
+    var(--panel);
+  border: 1px solid var(--line);
+  text-align: center;
+}
+.contact-cta-row{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 28px;
+}
+.contact-meta{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gap);
+  margin-top: clamp(36px, 5vw, 52px);
+  padding-top: clamp(28px, 4vw, 40px);
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+.contact-meta-item .eyebrow{ margin-bottom: 8px; }
+.contact-meta-item p{ font-size: 14.5px; color: var(--porcelain-dim); }
+.contact-meta-item a{ color: var(--porcelain); text-decoration: none; font-weight: 500; }
+.contact-meta-item a:hover{ color: var(--orchid); }
+@media (max-width: 760px){ .contact-meta{ grid-template-columns: 1fr; text-align: center; } }
+
+/* ═══════════════════════════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════════════════════════ */
+.site-footer{
+  padding: 36px var(--pad) 44px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--porcelain-dim);
+}
+.footer-social{ display: flex; gap: 10px; }
+.footer-social a{
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  color: var(--porcelain);
+  text-decoration: none;
+  transition: background .2s var(--ease-out), border-color .2s var(--ease-out);
+}
+.footer-social a:hover{ background: rgba(248,240,250,.08); border-color: var(--orchid); }
+.footer-social svg{ width: 16px; height: 16px; }
+</style>
+
+<a class="skip-link" href="#main">Перейти к содержимому</a>
+
+<header class="site-header" id="siteHeader">
+  <a class="wordmark" href="#main">
+    <svg class="mark" viewBox="0 0 40 40" aria-hidden="true">
+      <defs>
+        <radialGradient id="markGrad" cx="35%" cy="28%" r="80%">
+          <stop offset="0%" stop-color="#F0C6EA"/>
+          <stop offset="45%" stop-color="#B076E6"/>
+          <stop offset="100%" stop-color="#6A2FAE"/>
+        </radialGradient>
+      </defs>
+      <path d="M20 3C11 10 5 17.6 5 25a15 15 0 0 0 30 0c0-7.4-6-15-15-22Z" fill="url(#markGrad)"/>
+      <path d="M20 3C11 10 5 17.6 5 25a15 15 0 0 0 30 0c0-7.4-6-15-15-22Z" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1"/>
+    </svg>
+    <span class="type">
+      <span class="name">zefir</span>
+      <span class="sub">Маникюр · Педикюр</span>
+    </span>
+  </a>
+
+  <nav class="site-nav" aria-label="Основная навигация">
+    <a href="#services">Услуги и цены</a>
+    <a href="#masters">Мастера</a>
+    <a href="#testimonials">Отзывы</a>
+    <a href="#contact">Контакты</a>
+  </nav>
+
+  <div class="header-actions">
+    <a class="btn btn-primary btn-sm" href="https://www.instagram.com/zefir.manicure/" target="_blank" rel="noopener">Записаться</a>
+    <button class="burger" type="button" id="burgerBtn" aria-label="Открыть меню" aria-expanded="false" aria-controls="mobileNav">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2.5 5.5h15M2.5 10h15M2.5 14.5h15"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="mobile-nav" id="mobileNav">
+  <button class="mobile-close" type="button" id="mobileCloseBtn" aria-label="Закрыть меню">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 2.5l11 11M13.5 2.5l-11 11"/></svg>
+  </button>
+  <ul>
+    <li><a href="#services">Услуги и цены</a></li>
+    <li><a href="#masters">Мастера</a></li>
+    <li><a href="#testimonials">Отзывы</a></li>
+    <li><a href="#contact">Контакты</a></li>
+  </ul>
+  <a class="btn btn-primary" href="https://www.instagram.com/zefir.manicure/" target="_blank" rel="noopener">Записаться в Direct</a>
+</div>
+
+<main id="main">
+  <section class="hero">
+    <div class="hero-bg" aria-hidden="true">
+      <div class="wash"></div>
+      <div class="blob blob-a"></div>
+      <div class="blob blob-b"></div>
+      <div class="blob blob-c"></div>
+      <div class="grain"></div>
+    </div>
+    <div class="hero-inner">
+      <span class="eyebrow" style="justify-content:center">studio zefir</span>
+      <h1>Небольшая роскошь<br>для твоих рук</h1>
+      <p class="hero-sub">Маникюр и педикюр в фильмовых тонах: аккуратная работа, стойкое покрытие и атмосфера, в которую хочется возвращаться каждые три недели.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="https://www.instagram.com/zefir.manicure/" target="_blank" rel="noopener">Записаться в Direct</a>
+        <a class="btn btn-ghost" href="#services">Смотреть услуги и цены</a>
+      </div>
+      <div class="hero-features">
+        <div class="hero-feature">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5 12 8l5.5 2-5.5 2-2 5.5-2-5.5L2.5 10 8 8Z"/></svg>
+          <span>Стерильные инструменты</span>
+        </div>
+        <div class="hero-feature">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.8c3 3 5.2 6 5.2 8.7a5.2 5.2 0 1 1-10.4 0c0-2.7 2.2-5.7 5.2-8.7Z"/></svg>
+          <span>Материалы премиум-класса</span>
+        </div>
+        <div class="hero-feature">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7.2"/><path d="M10 6v4l2.6 2.6"/></svg>
+          <span>Стойкость покрытия до 3 недель</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Портфолио: плейсхолдер-плитки вместо реальных фото —
+       у нас нет файлов с фотографиями работ, только скрин-referансы
+       в переписке. Замените .swatch на <img> с реальными кадрами. -->
+  <section id="gallery" aria-labelledby="galleryTitle">
+    <div class="container">
+      <div class="section-head center" data-reveal>
+        <span class="eyebrow" style="justify-content:center">портфолио</span>
+        <h2 class="section-title" id="galleryTitle">Кадры со съёмок и с рук наших клиенток</h2>
+        <p class="section-lede">Здесь будет живая лента работ — пришлите фото, и мы соберём витрину под цвет каждого сезона.</p>
+      </div>
+      <div class="gallery-grid" data-reveal>
+        <div class="swatch s1"><span>орхидея</span></div>
+        <div class="swatch s2"><span>блаш</span></div>
+        <div class="swatch s3"><span>шампань</span></div>
+        <div class="swatch s4"><span>ночной ирис</span></div>
+        <div class="swatch s5"><span>фуксия</span></div>
+        <div class="swatch s6"><span>дымчатый лавандовый</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="services" aria-labelledby="servicesTitle">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <span class="eyebrow">услуги и цены</span>
+        <h2 class="section-title" id="servicesTitle">Прайс-лист</h2>
+        <p class="section-lede">Актуальные позиции студии. Итоговая стоимость зависит от длины и формы ногтя — мастер подскажет точную цену перед началом работы.</p>
+      </div>
+
+      <div data-reveal>
+        <div class="tablist" role="tablist" aria-label="Категории услуг">
+          <button class="tab" id="tabManicure" role="tab" aria-selected="true" aria-controls="panelManicure" type="button">Маникюр</button>
+          <button class="tab" id="tabPedicure" role="tab" aria-selected="false" aria-controls="panelPedicure" type="button" tabindex="-1">Педикюр</button>
+        </div>
+
+        <div class="service-panel is-active" id="panelManicure" role="tabpanel" aria-labelledby="tabManicure">
+          <ul class="service-list">
+            <li class="service-row">
+              <div class="service-main"><div class="service-name">Маникюр + гель-лак + укрепление</div><div class="service-dur">1 ч 10 м</div></div>
+              <div class="service-price">от 3 300 ₽</div>
+            </li>
+            <li class="service-row">
+              <div class="service-main"><div class="service-name">Маникюр + гель-лак</div><div class="service-dur">50 м</div></div>
+              <div class="service-price">от 2 800 ₽</div>
+            </li>
+            <li class="service-row">
+              <div class="service-main"><div class="service-name">Наращивание ногтей</div><div class="service-dur">2 ч</div></div>
+              <div class="service-price">от 3 800 ₽</div>
+            </li>
+            <li class="service-row">
+              <div class="service-main"><div class="service-name">Мужской маникюр</div><div class="service-dur">30 м</div></div>
+              <div class="service-price">1 700 ₽</div>
+            </li>
+            <li class="service-row">
+              <div class="service-main"><div class="service-name">Дизайн Френч</div><div class="service-dur">15 м</div></div>
+              <div class="service-price">500 ₽</div>
+            </li>
+            <li class="service-row">
+              <div class="service-main"><div class="service-name">Дизайн всех ногтей</div><div class="service-dur">15 м</div></div>
+              <div class="service-price">500 ₽</div>
+            </li>
+            <li class="service-row">
+              <div class="service-main"><div class="service-name">Восстановление архитектуры ногтей</div><div class="service-dur">15 м</div></div>
+              <div class="service-price">500 ₽</div>
+            </li>
+            <li class="service-row">
+              <div class="service-main"><div class="service-name">Снятие гель-лака без покрытия</div><div class="service-dur">15 м</div></div>
+              <div class="service-price">500 ₽</div>
+            </li>
+            <li class="service-row">
+              <div class="service-main"><div class="service-name">Ремонт ногтя</div><div class="service-dur">15 м</div></div>
+              <div class="service-price">от 300 ₽</div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="service-panel" id="panelPedicure" role="tabpanel" aria-labelledby="tabPedicure" hidden>
+          <ul class="service-list">
+            <li class="service-row">
+              <div class="service-main"><div class="service-name">Педикюр SMART + гель-лак</div><div class="service-dur">1 ч</div></div>
+              <div class="service-price">от 3 300 ₽</div>
+            </li>
+            <li class="service-row">
+              <div class="service-main"><div class="service-name">Педикюр экспресс (без пяток) + гель-лак</div><div class="service-dur">40 м</div></div>
+              <div class="service-price">от 2 800 ₽</div>
+            </li>
+            <li class="service-row">
+              <div class="service-main"><div class="service-name">Педикюр SMART без покрытия</div><div class="service-dur">—</div></div>
+              <div class="service-price">уточняйте</div>
+            </li>
+          </ul>
+        </div>
+        <p class="service-note">Полный список позиций и точные цены — в Direct или на месте у администратора.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Мастера: имена и фото — плейсхолдер до получения реальных данных студии. -->
+  <section id="masters" aria-labelledby="mastersTitle">
+    <div class="container">
+      <div class="section-head center" data-reveal>
+        <span class="eyebrow" style="justify-content:center">команда</span>
+        <h2 class="section-title" id="mastersTitle">Мастера студии</h2>
+        <p class="section-lede">Каждая работа — это встреча вкуса клиентки и почерка мастера. Раздел ждёт реальных имён и портфолио — пришлите, и мы обновим карточки.</p>
+      </div>
+      <div class="masters-grid" data-reveal>
+        <article class="master-card">
+          <div class="master-avatar" aria-hidden="true">В</div>
+          <h3 class="master-name">Виктория</h3>
+          <div class="master-role">Мастер маникюра</div>
+          <p class="master-bio">Аккуратная классика и сложные дизайны, специализация — стойкое покрытие.</p>
+        </article>
+        <article class="master-card">
+          <div class="master-avatar" aria-hidden="true">А</div>
+          <h3 class="master-name">Алина</h3>
+          <div class="master-role">Мастер педикюра</div>
+          <p class="master-bio">Аппаратный педикюр и уход за проблемными зонами, мягкая рука.</p>
+        </article>
+        <article class="master-card">
+          <div class="master-avatar" aria-hidden="true">М</div>
+          <h3 class="master-name">Марина</h3>
+          <div class="master-role">Мастер наращивания</div>
+          <p class="master-bio">Архитектура и коррекция формы, работает с самыми капризными ногтями.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Отзывы: примеры формата — замените на реальные цитаты клиенток. -->
+  <section id="testimonials" aria-labelledby="testimonialsTitle">
+    <div class="container">
+      <div class="section-head center" data-reveal>
+        <span class="eyebrow" style="justify-content:center">отзывы</span>
+        <h2 class="section-title" id="testimonialsTitle">Что говорят клиентки</h2>
+      </div>
+      <div class="testi-grid" data-reveal>
+        <article class="testi-card">
+          <div class="testi-stars" aria-hidden="true">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .8l2 4.3 4.6.5-3.5 3.1 1 4.6L8 11l-4.1 2.3 1-4.6L1.4 5.6l4.6-.5Z"/></svg>
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .8l2 4.3 4.6.5-3.5 3.1 1 4.6L8 11l-4.1 2.3 1-4.6L1.4 5.6l4.6-.5Z"/></svg>
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .8l2 4.3 4.6.5-3.5 3.1 1 4.6L8 11l-4.1 2.3 1-4.6L1.4 5.6l4.6-.5Z"/></svg>
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .8l2 4.3 4.6.5-3.5 3.1 1 4.6L8 11l-4.1 2.3 1-4.6L1.4 5.6l4.6-.5Z"/></svg>
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .8l2 4.3 4.6.5-3.5 3.1 1 4.6L8 11l-4.1 2.3 1-4.6L1.4 5.6l4.6-.5Z"/></svg>
+          </div>
+          <p class="testi-quote">«Хожу третий год подряд — покрытие держится дольше, чем везде, где я была раньше».</p>
+          <div class="testi-name">Марина К.</div>
+        </article>
+        <article class="testi-card">
+          <div class="testi-stars" aria-hidden="true">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .8l2 4.3 4.6.5-3.5 3.1 1 4.6L8 11l-4.1 2.3 1-4.6L1.4 5.6l4.6-.5Z"/></svg>
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .8l2 4.3 4.6.5-3.5 3.1 1 4.6L8 11l-4.1 2.3 1-4.6L1.4 5.6l4.6-.5Z"/></svg>
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .8l2 4.3 4.6.5-3.5 3.1 1 4.6L8 11l-4.1 2.3 1-4.6L1.4 5.6l4.6-.5Z"/></svg>
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .8l2 4.3 4.6.5-3.5 3.1 1 4.6L8 11l-4.1 2.3 1-4.6L1.4 5.6l4.6-.5Z"/></svg>
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .8l2 4.3 4.6.5-3.5 3.1 1 4.6L8 11l-4.1 2.3 1-4.6L1.4 5.6l4.6-.5Z"/></svg>
+          </div>
+          <p class="testi-quote">«Атмосфера в студии — отдельная причина записываться снова. Никогда не тороплюсь уходить».</p>
+          <div class="testi-name">Алина С.</div>
+        </article>
+        <article class="testi-card">
+          <div class="testi-stars" aria-hidden="true">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .8l2 4.3 4.6.5-3.5 3.1 1 4.6L8 11l-4.1 2.3 1-4.6L1.4 5.6l4.6-.5Z"/></svg>
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .8l2 4.3 4.6.5-3.5 3.1 1 4.6L8 11l-4.1 2.3 1-4.6L1.4 5.6l4.6-.5Z"/></svg>
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .8l2 4.3 4.6.5-3.5 3.1 1 4.6L8 11l-4.1 2.3 1-4.6L1.4 5.6l4.6-.5Z"/></svg>
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .8l2 4.3 4.6.5-3.5 3.1 1 4.6L8 11l-4.1 2.3 1-4.6L1.4 5.6l4.6-.5Z"/></svg>
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .8l2 4.3 4.6.5-3.5 3.1 1 4.6L8 11l-4.1 2.3 1-4.6L1.4 5.6l4.6-.5Z"/></svg>
+          </div>
+          <p class="testi-quote">«Записалась на архитектуру ногтя — сделали аккуратно и без боли, чего давно не встречала».</p>
+          <div class="testi-name">Дарья В.</div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" aria-labelledby="contactTitle">
+    <div class="container">
+      <div class="contact" data-reveal>
+        <span class="eyebrow" style="justify-content:center">запись</span>
+        <h2 class="section-title" id="contactTitle">Записаться проще всего в Direct</h2>
+        <p class="section-lede" style="margin-inline:auto">Напишите желаемую услугу, дату и время — подберём удобный слот и мастера в течение дня.</p>
+        <div class="contact-cta-row">
+          <a class="btn btn-primary" href="https://www.instagram.com/zefir.manicure/" target="_blank" rel="noopener">@zefir.manicure</a>
+          <a class="btn btn-ghost" href="https://www.instagram.com/zefir.beautystudio/" target="_blank" rel="noopener">@zefir.beautystudio</a>
+        </div>
+        <div class="contact-meta">
+          <div class="contact-meta-item">
+            <span class="eyebrow">адрес</span>
+            <p>Уточняйте актуальный адрес студии в Direct — добавим сюда, как только подтвердите.</p>
+          </div>
+          <div class="contact-meta-item">
+            <span class="eyebrow">часы работы</span>
+            <p>Приём по предварительной записи — свободные слоты смотрите в Direct.</p>
+          </div>
+          <div class="contact-meta-item">
+            <span class="eyebrow">телефон</span>
+            <p>Номер появится здесь, как только пришлёте контакт для записи.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <span>© <span id="year"></span> zefir — студия маникюра и педикюра</span>
+  <div class="footer-social">
+    <a href="https://www.instagram.com/zefir.manicure/" target="_blank" rel="noopener" aria-label="Instagram: zefir.manicure">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="1.5" width="13" height="13" rx="4"/><circle cx="8" cy="8" r="3.2"/><circle cx="11.6" cy="4.4" r=".6" fill="currentColor" stroke="none"/></svg>
+    </a>
+  </div>
+</footer>
+
+<script>
+(() => {
+  "use strict";
+
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  /* header shadow on scroll */
+  const header = document.getElementById("siteHeader");
+  const onScroll = () => header.classList.toggle("is-scrolled", window.scrollY > 8);
+  onScroll();
+  document.addEventListener("scroll", onScroll, { passive: true });
+
+  /* mobile nav */
+  const mobileNav = document.getElementById("mobileNav");
+  const burgerBtn = document.getElementById("burgerBtn");
+  const closeBtn = document.getElementById("mobileCloseBtn");
+  function openNav(){
+    mobileNav.classList.add("is-open");
+    burgerBtn.setAttribute("aria-expanded", "true");
+    document.body.style.overflow = "hidden";
+  }
+  function closeNav(){
+    mobileNav.classList.remove("is-open");
+    burgerBtn.setAttribute("aria-expanded", "false");
+    document.body.style.overflow = "";
+  }
+  burgerBtn.addEventListener("click", openNav);
+  closeBtn.addEventListener("click", closeNav);
+  mobileNav.querySelectorAll("a").forEach(a => a.addEventListener("click", closeNav));
+
+  /* services tablist */
+  const tabs = [document.getElementById("tabManicure"), document.getElementById("tabPedicure")];
+  const panels = { tabManicure: document.getElementById("panelManicure"), tabPedicure: document.getElementById("panelPedicure") };
+  function selectTab(tab){
+    tabs.forEach(t => {
+      const active = t === tab;
+      t.setAttribute("aria-selected", String(active));
+      t.tabIndex = active ? 0 : -1;
+      panels[t.id].classList.toggle("is-active", active);
+      panels[t.id].hidden = !active;
+    });
+    tab.focus();
+  }
+  tabs.forEach((tab, i) => {
+    tab.addEventListener("click", () => selectTab(tab));
+    tab.addEventListener("keydown", e => {
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft"){
+        e.preventDefault();
+        selectTab(tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length]);
+      }
+    });
+  });
+
+  /* scroll reveal */
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const revealEls = document.querySelectorAll("[data-reveal]");
+  if (reduced || !("IntersectionObserver" in window)){
+    revealEls.forEach(el => el.classList.add("is-visible"));
+  } else {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting){
+          entry.target.classList.add("is-visible");
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: .15, rootMargin: "0px 0px -60px 0px" });
+    revealEls.forEach(el => io.observe(el));
+  }
+})();
+</script>
