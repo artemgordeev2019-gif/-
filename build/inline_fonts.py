@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
-"""Inline the subset woff2 faces into each source page.
+"""Inline the subset woff2 faces and the local artwork into each source page.
 
 Artifact pages are served under a strict CSP that blocks every external host,
 so a linked webfont would fail silently and fall back. Each source file in
 src/ carries a `/*@FONTS@*/` marker; this script replaces it with a @font-face
 block whose src is a base64 data URI, and writes the result to dist/.
+
+The same reasoning covers the images: a page in dist/ must not reach for a
+sibling file either, since it is served alone. Every `assets/...` reference in
+the source — in markup or in CSS — is rewritten to a data URI on the way out,
+which is why src/ can keep readable relative paths.
 
 Run: python3 build/inline_fonts.py
 """
@@ -28,6 +33,17 @@ FACES = [
 
 MARKER = "/*@FONTS@*/"
 
+# an assets/ reference, whether it sits in a src="" or inside url()
+ASSET_RE = re.compile(r"(?<=[\"'(])(assets/[\w./-]+)")
+
+MIME = {
+    ".webp": "image/webp",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".svg": "image/svg+xml",
+}
+
 
 def font_css() -> str:
     out = []
@@ -48,6 +64,26 @@ def font_css() -> str:
     return "\n".join(out)
 
 
+def inline_assets(text: str, page_name: str) -> str:
+    """Swap every assets/ reference for a data URI of the file itself."""
+    cache: dict[str, str] = {}
+
+    def sub(match: re.Match) -> str:
+        rel = match.group(1)
+        if rel not in cache:
+            path = ROOT / rel
+            if not path.exists():
+                sys.exit(f"{page_name} references a missing asset: {rel}")
+            mime = MIME.get(path.suffix.lower())
+            if mime is None:
+                sys.exit(f"{page_name}: no mime type known for {rel}")
+            b64 = base64.b64encode(path.read_bytes()).decode("ascii")
+            cache[rel] = f"data:{mime};base64,{b64}"
+        return cache[rel]
+
+    return ASSET_RE.sub(sub, text)
+
+
 def main() -> None:
     css = font_css()
     DIST.mkdir(exist_ok=True)
@@ -59,7 +95,7 @@ def main() -> None:
         text = page.read_text(encoding="utf-8")
         if MARKER not in text:
             sys.exit(f"{page.name} has no {MARKER} marker")
-        built = text.replace(MARKER, css)
+        built = inline_assets(text.replace(MARKER, css), page.name)
         target = DIST / page.name
         target.write_text(built, encoding="utf-8")
         kb = len(built.encode("utf-8")) / 1024

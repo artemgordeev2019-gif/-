@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<title>Ice Sweet — конфигуратор вкусов</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+/*@FONTS@*/
+
+/* ═══════════════════════════════════════════════════════════════
+   TOKENS
+   The page is one lit interior: a warm cream ground the flavour
+   writes over. Only the ground answers the theme; the artwork
+   stays as painted, so the tokens below live on bare :root and
+   always resolve in the unstamped ("system") state.
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --cream:     #FFF6EA;
+  --cream-dim: #F6E9D8;
+  --ink:       #3D2F2A;
+  --ink-soft:  #6B5A52;
+  --line:      rgba(61,47,42,.10);
+
+  /* the carousel writes these live, per frame */
+  --accent: #C8A84B;
+  --soft:   #EEDFB4;
+
+  --r-screen: 34px;
+  --r-card:   22px;
+  --r-pill:   999px;
+
+  --pad: clamp(18px, 4%, 64px);
+
+  --ease-out:  cubic-bezier(.16, 1, .3, 1);
+  --ease-soft: cubic-bezier(.32, .72, 0, 1);
+
+  --font-display: 'Prata', 'Iowan Old Style', Georgia, serif;
+  --font-ui: 'Golos', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetMono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --stage: #FDF1E3;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --stage: #241C18; }
+}
+:root[data-theme="dark"]{ --stage: #241C18; }
+
+*{ margin:0; padding:0; box-sizing:border-box; }
+
+html,body{ height:100%; }
+body{
+  background: var(--stage);
+  font-family: var(--font-ui);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  display:flex; align-items:center; justify-content:center;
+  padding: clamp(0px, 2.2vmin, 28px);
+  overflow:hidden;
+}
+
+/* ═══ THE SCREEN ═══════════════════════════════════════════════ */
+.screen{
+  position:relative;
+  width:100%; height:100%;
+  border-radius: var(--r-screen);
+  overflow:hidden;
+  isolation:isolate;
+  box-shadow: 0 30px 90px rgba(90,60,50,.18);
+}
+
+/* the flavour's own light, repainted per frame — a CSS transition
+   cannot interpolate a gradient, so the tween happens in JS */
+.wash{ position:absolute; inset:0; z-index:0; }
+
+/* one generated tile, handed to CSS: keeps the big gradient from
+   banding without a second canvas in the compositor */
+.grain{
+  position:absolute; inset:0; z-index:1;
+  mix-blend-mode:soft-light; opacity:.30; pointer-events:none;
+}
+
+.vignette{
+  position:absolute; inset:0; z-index:2; pointer-events:none;
+  background: radial-gradient(120% 100% at 50% 46%,
+    rgba(255,255,255,0) 42%, rgba(120,80,60,.13) 100%);
+}
+
+/* ═══ HEADER ══════════════════════════════════════════════════ */
+.bar{
+  position:absolute; z-index:20; top:0; left:0; right:0;
+  display:flex; align-items:center; justify-content:space-between; gap:20px;
+  padding: clamp(16px, 2.6vmin, 30px) var(--pad);
+}
+.mark{
+  font-family: var(--font-display);
+  font-size: clamp(19px, 2.1vmin, 26px);
+  letter-spacing:.01em;
+  white-space:nowrap;
+}
+.nav{
+  position:absolute; left:50%; transform: translateX(-50%);
+  display:flex; align-items:center; gap:4px;
+  background: rgba(255,255,255,.44);
+  border:1px solid rgba(255,255,255,.6);
+  border-radius: var(--r-pill);
+  padding:5px;
+  backdrop-filter: blur(9px);
+}
+.nav button{
+  font: 600 11px/1 var(--font-ui);
+  letter-spacing:.12em;
+  color: var(--ink-soft);
+  background:none; border:0; cursor:pointer;
+  padding:10px 18px; border-radius: var(--r-pill);
+  transition: color .3s var(--ease-out), background .3s var(--ease-out);
+}
+.nav button[aria-current="page"]{ background: var(--ink); color: var(--cream); }
+.nav button:not([aria-current="page"]):hover{ color: var(--ink); }
+.cart{
+  width:44px; height:44px; flex:none;
+  display:grid; place-items:center;
+  border-radius:50%;
+  background: rgba(255,255,255,.5);
+  border:1px solid rgba(255,255,255,.66);
+  color: var(--ink);
+  cursor:pointer;
+  transition: transform .3s var(--ease-out), background .3s var(--ease-out);
+}
+.cart:hover{ transform: translateY(-2px); background: rgba(255,255,255,.78); }
+.cart svg{ width:17px; height:17px; }
+
+/* ═══ THE READOUT ═════════════════════════════════════════════ */
+.info{
+  position:absolute; z-index:14;
+  left: var(--pad);
+  top:50%; transform: translateY(-50%);
+  width: min(30ch, 34vw);
+}
+.meta{
+  font: 500 10px/1 var(--font-mono);
+  letter-spacing:.22em;
+  color: var(--ink-soft);
+  text-transform:uppercase;
+}
+.name{
+  font-family: var(--font-display);
+  font-size: clamp(34px, 6.2vmin, 76px);
+  line-height:1.02;
+  letter-spacing:-.01em;
+  margin:.28em 0 0;
+  text-wrap:balance;
+}
+.label{
+  font: 500 10px/1 var(--font-mono);
+  letter-spacing:.22em;
+  color: var(--ink-soft);
+  text-transform:uppercase;
+  margin-top: clamp(18px, 3vmin, 34px);
+}
+.ing{ list-style:none; margin-top:12px; display:grid; gap: clamp(7px, 1.1vmin, 12px); }
+.ing li{
+  display:flex; align-items:center; gap:11px;
+  font-size: clamp(13px, 1.5vmin, 16px);
+  color: var(--ink);
+}
+.ing i{
+  width:7px; height:7px; border-radius:50%;
+  background: var(--accent);
+  flex:none;
+}
+.kcal{
+  font-weight:700;
+  font-size: clamp(17px, 2.2vmin, 24px);
+  margin-top:10px;
+}
+
+/* every text swap rides the same slide, so the readout reads as
+   one object changing rather than four fields updating */
+.slide{ transition: opacity .34s var(--ease-out), transform .34s var(--ease-out); }
+.is-swapping .slide{ opacity:0; transform: translateY(9px); }
+
+/* ═══ THE CONE ════════════════════════════════════════════════ */
+.stack{
+  position:absolute; z-index:10;
+  left:50%; bottom:0;
+  /* driven by height: the artwork is twice as tall as it is wide, so
+     sizing it by width fills the frame top to bottom and leaves the
+     headline nowhere to sit */
+  height: min(78vh, 44vw, 690px);
+  aspect-ratio: 520 / 1008;
+  transform: translateX(-50%);
+  pointer-events:none;
+}
+.stack img{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  object-fit:contain; object-position:bottom;
+  display:block;
+  /* The artwork is cut off at its own bottom edge — the waffle ends
+     flat and the garnish sits in that last strip. It is painted to
+     bleed, so the strip is pushed under the frame rather than shown
+     resting on it. */
+  transform: translateY(9.5%);
+  filter: drop-shadow(0 26px 40px rgba(120,70,60,.22));
+  opacity:0;
+  transition: opacity .5s var(--ease-soft);
+}
+.stack img.is-on{ opacity:1; }
+
+/* ═══ THE ARC ═════════════════════════════════════════════════ */
+.arc{
+  position:absolute; z-index:16;
+  right: calc(var(--pad) + var(--chip) / 2);
+  top:50%;
+  width:0; height:0;
+  touch-action: pan-y;
+}
+.chip{
+  position:absolute;
+  left:0; top:0;
+  width: var(--chip); height: var(--chip);
+  margin: calc(var(--chip) / -2) 0 0 calc(var(--chip) / -2);
+  display:flex; flex-direction:column; align-items:center;
+  padding:8px 6px 7px;
+  overflow:hidden;
+  background: rgba(255,255,255,.72);
+  border:1.5px solid var(--line);
+  border-radius: var(--r-card);
+  cursor:pointer;
+  backdrop-filter: blur(7px);
+  box-shadow: 0 10px 28px rgba(180,120,110,.13);
+  transform:
+    translate(var(--x), var(--y))
+    rotate(var(--rot))
+    scale(var(--sc));
+  opacity: var(--op);
+  transition: border-color .35s var(--ease-out), box-shadow .35s var(--ease-out),
+              background .35s var(--ease-out);
+}
+.chip img{
+  flex:1; min-height:0;
+  width:56%;
+  object-fit:contain; object-position:bottom;
+  pointer-events:none;
+}
+.chip b{
+  font: 600 9px/1 var(--font-ui);
+  letter-spacing:.04em;
+  color: var(--ink-soft);
+  padding-top:5px;
+  white-space:nowrap;
+}
+.chip[aria-pressed="true"]{
+  background: rgba(255,255,255,.94);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 26%, transparent),
+              0 16px 34px rgba(180,120,110,.20);
+}
+.chip[aria-pressed="true"] b{ color: var(--ink); }
+.arc:not(.is-dragging) .chip:not([aria-pressed="true"]):hover{
+  background: rgba(255,255,255,.9);
+}
+.is-dragging .chip{ cursor:grabbing; }
+
+/* the ring the browser draws by default lands as a black box on a
+   pastel card — keep the affordance, give it the flavour's colour */
+.chip:focus-visible,
+.nav button:focus-visible,
+.cart:focus-visible,
+.add:focus-visible,
+.arc:focus-visible{
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* ═══ THE PRICE ═══════════════════════════════════════════════ */
+.buy{
+  position:absolute; z-index:18;
+  left:50%; bottom: clamp(16px, 3vmin, 34px);
+  transform: translateX(-50%);
+  display:flex; align-items:center; gap:14px;
+  padding:9px 9px 9px 22px;
+  background: rgba(255,255,255,.8);
+  border:1px solid rgba(255,255,255,.7);
+  border-radius: var(--r-pill);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 30px rgba(150,100,90,.16);
+}
+.price{ font-weight:700; font-size: clamp(14px, 1.7vmin, 18px); white-space:nowrap; }
+.add{
+  width:38px; height:38px;
+  display:grid; place-items:center;
+  border:0; border-radius:50%;
+  background: var(--ink); color: var(--cream);
+  cursor:pointer;
+  transition: transform .3s var(--ease-out);
+}
+.add:hover{ transform: scale(1.07); }
+.add svg{ width:15px; height:15px; }
+
+.sr{
+  position:absolute; width:1px; height:1px; overflow:hidden;
+  clip-path: inset(50%); white-space:nowrap;
+}
+
+/* ═══ NARROW ══════════════════════════════════════════════════
+   Below the break the arc cannot ride beside the cone without
+   crossing it, so the same slots relayout as a strip along the
+   bottom and the readout moves above the drink.
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 860px), (max-aspect-ratio: 3/4){
+  .info{
+    left: var(--pad); right: var(--pad);
+    top: clamp(84px, 13vh, 140px);
+    transform:none; width:auto;
+    text-align:center;
+  }
+  /* rows stay left-aligned inside a block that is itself centred,
+     otherwise every bullet lands at a different indent */
+  .ing{ width:max-content; margin-inline:auto; }
+  .name{ font-size: clamp(30px, 8.4vw, 54px); }
+  .stack{ height: min(54vh, 165vw, 470px); }
+  .arc{
+    right:auto; left:50%;
+    top:auto; bottom: calc(clamp(66px, 11vh, 96px) + var(--chip) / 2);
+  }
+  .buy{ bottom: clamp(12px, 2.4vh, 22px); }
+}
+
+/* the three sections cannot share the bar with the wordmark on a phone
+   without sitting on top of it */
+@media (max-width: 560px){
+  .nav{ display:none; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:.01ms !important;
+    transition-duration:.01ms !important;
+  }
+}
+</style>
+
+<body>
+<main class="screen" id="screen">
+  <div class="wash" id="wash"></div>
+  <div class="grain" id="grain"></div>
+  <div class="vignette"></div>
+
+  <header class="bar">
+    <div class="mark">Ice Sweet</div>
+    <nav class="nav" aria-label="Разделы">
+      <button type="button" aria-current="page">МЕНЮ</button>
+      <button type="button">О НАС</button>
+      <button type="button">ДОСТАВКА</button>
+    </nav>
+    <button class="cart" type="button" aria-label="Корзина">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+        <path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
+      </svg>
+    </button>
+  </header>
+
+  <section class="info" id="info" aria-live="polite">
+    <p class="meta slide" id="metaEl">КЛАССИКА · 240 ККАЛ</p>
+    <h1 class="name slide" id="nameEl">Ванильный пломбир</h1>
+    <p class="label">СОСТАВ</p>
+    <ul class="ing" id="ingEl">
+      <li class="slide"><i></i><span>Ваниль Мадагаскар</span></li>
+      <li class="slide"><i></i><span>Сливки 35%</span></li>
+      <li class="slide"><i></i><span>Тростниковый сахар</span></li>
+    </ul>
+    <p class="label">КАЛОРИИ</p>
+    <p class="kcal slide" id="kcalEl">240 ккал</p>
+  </section>
+
+  <div class="stack" id="stack">
+    <img alt="" id="coneA">
+    <img alt="" id="coneB">
+  </div>
+
+  <div class="arc" id="arc" role="listbox" aria-label="Вкусы" tabindex="0"></div>
+
+  <div class="buy">
+    <span class="price slide" id="priceEl">290 ₽</span>
+    <button class="add" type="button" id="addEl" aria-label="Добавить в заказ">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+
+  <p class="sr" id="live" role="status"></p>
+</main>
+
+<script>
+(() => {
+  "use strict";
+
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ═══════════════════════════════════════════════════════════
+     1. MENU
+     Every flavour carries its own light: `accent` is the colour
+     the drink throws on the room, `soft` the halo between that
+     and the cream ground.
+     ═══════════════════════════════════════════════════════════ */
+  const FLAVOURS = [
+    { key:"vanilla",    name:"Ванильный пломбир", tag:"Классика",   kcal:240, price:"290 ₽",
+      accent:"#C8A84B", soft:"#EEDFB4", short:"Ваниль",
+      ing:["Ваниль Мадагаскар", "Сливки 35%", "Тростниковый сахар"] },
+    { key:"strawberry", name:"Клубника",          tag:"Ягодное",    kcal:210, price:"300 ₽",
+      accent:"#DE6472", soft:"#F3C3C8", short:"Клубника",
+      ing:["Свежая клубника", "Лимонный сок", "Сливки"] },
+    { key:"chocolate",  name:"Тёмный шоколад",    tag:"Классика",   kcal:265, price:"310 ₽",
+      accent:"#8B5A2B", soft:"#DCC4AB", short:"Шоколад",
+      ing:["Шоколад 70%", "Какао-масло", "Морская соль"] },
+    { key:"sakura",     name:"Сакура",            tag:"Экзотика",   kcal:220, price:"350 ₽",
+      accent:"#E899B4", soft:"#F6D3DC", short:"Сакура",
+      ing:["Цветки сакуры", "Белый шоколад", "Розовая вода"] },
+    { key:"mint",       name:"Мята",              tag:"Свежее",     kcal:200, price:"320 ₽",
+      accent:"#8FC49B", soft:"#D3E7D8", short:"Мята",
+      ing:["Свежая мята", "Сливки", "Лаймовый сок"] },
+    { key:"lavender",   name:"Лаванда",           tag:"Флоральное", kcal:215, price:"330 ₽",
+      accent:"#A990D0", soft:"#DDD1EC", short:"Лаванда",
+      ing:["Прованская лаванда", "Акациевый мёд", "Сливки"] },
+    { key:"mango",      name:"Манго & Чили",      tag:"Острое",     kcal:190, price:"360 ₽",
+      accent:"#F5A030", soft:"#F8D6AE", short:"Манго",
+      ing:["Манго Альфонсо", "Чили Хабанеро", "Лайм"] },
+    { key:"blueberry",  name:"Черника",           tag:"Ягодное",    kcal:200, price:"310 ₽",
+      accent:"#5A6AB4", soft:"#C3C9E5", short:"Черника",
+      ing:["Дикая черника", "Агар-агар", "Мёд"] },
+  ];
+  const N = FLAVOURS.length;
+  const GROUND = [255, 246, 234];
+
+  /* Written out one by one on purpose. A path glued together at
+     runtime from the key is invisible to the build, which rewrites
+     literal asset references into data URIs, and the bundled page
+     would ship with eight dead images. */
+  const CONES = {
+    vanilla:    "assets/flavors/cone-vanilla.webp",
+    strawberry: "assets/flavors/cone-strawberry.webp",
+    chocolate:  "assets/flavors/cone-chocolate.webp",
+    sakura:     "assets/flavors/cone-sakura.webp",
+    mint:       "assets/flavors/cone-mint.webp",
+    lavender:   "assets/flavors/cone-lavender.webp",
+    mango:      "assets/flavors/cone-mango.webp",
+    blueberry:  "assets/flavors/cone-blueberry.webp",
+  };
+  const SRC = key => CONES[key];
+
+  /* ═══════════════════════════════════════════════════════════
+     2. ARC GEOMETRY
+     The chips ride a circle whose centre sits off the right
+     edge, so the picked flavour reaches furthest into the room
+     and its neighbours fall away around it. Wide and narrow
+     read the same arc, rotated a quarter turn.
+     ═══════════════════════════════════════════════════════════ */
+  const GEO = {
+    /* `radius` spaces the chips along the arc; `bow` is how far a chip
+       leans back off it. They are separate numbers because the column
+       has to stay inside the frame: a bow equal to the radius would
+       throw the far chips clean off the edge. */
+    wide:   { radius: 560, bow: 190, step: .152, chip: 104,
+              rotDamp: .62, fade: .17, vertical: true  },
+    narrow: { radius: 270, bow: 100, step: .245, chip:  74,
+              rotDamp: .40, fade: .30, vertical: false },
+  };
+  const SCALE_FALL = .062;
+
+  const lerp  = (a, b, t) => a + (b - a) * t;
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const mod   = (n, m) => ((n % m) + m) % m;
+  /* shortest signed way from `pos` to slot `i` around the ring */
+  const wrapDelta = (pos, i) => {
+    let d = mod(i - pos, N);
+    if (d > N / 2) d -= N;
+    return d;
+  };
+  const hexToRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const lerpC = (a, b, t) => [0, 1, 2].map(i => Math.round(lerp(a[i], b[i], t)));
+  const rgbCss = c => `rgb(${c[0]},${c[1]},${c[2]})`;
+
+  /* ═══════════════════════════════════════════════════════════
+     3. STATE
+     `pos` is a continuous ring coordinate, not an index: drag
+     and wheel move it directly and the spring settles it onto a
+     slot, which is what makes the arc feel like one object.
+     ═══════════════════════════════════════════════════════════ */
+  const st = {
+    pos: 0, target: 0, vel: 0,
+    selected: 0,
+    L: GEO.wide,
+    accent: hexToRgb(FLAVOURS[0].accent),
+    soft:   hexToRgb(FLAVOURS[0].soft),
+    dragging: false,
+    userTouched: reduced,
+    w: 0, h: 0,
+  };
+
+  const screen  = document.getElementById("screen");
+  const wash    = document.getElementById("wash");
+  const arc     = document.getElementById("arc");
+  const info    = document.getElementById("info");
+  const stack   = document.getElementById("stack");
+  const live    = document.getElementById("live");
+  const metaEl  = document.getElementById("metaEl");
+  const nameEl  = document.getElementById("nameEl");
+  const kcalEl  = document.getElementById("kcalEl");
+  const priceEl = document.getElementById("priceEl");
+  const ingRows = [...document.querySelectorAll("#ingEl li span")];
+
+  /* ═══════════════════════════════════════════════════════════
+     4. CHIPS
+     ═══════════════════════════════════════════════════════════ */
+  const chips = FLAVOURS.map((f, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.dataset.i = String(i);
+    b.setAttribute("role", "option");
+    b.innerHTML = `<img src="${SRC(f.key)}" alt=""><b>${f.short}</b>`;
+    b.addEventListener("click", () => select(i));
+    arc.appendChild(b);
+    return b;
+  });
+
+  /* every face is decoded before it is ever swapped in, so a
+     change never blinks through an empty frame */
+  FLAVOURS.forEach(f => { new Image().src = SRC(f.key); });
+
+  /* ═══════════════════════════════════════════════════════════
+     5. GRAIN
+     One tile, generated once and handed to CSS: the gradient is
+     wide and flat, and without it the ramp bands on 8-bit
+     screens.
+     ═══════════════════════════════════════════════════════════ */
+  (() => {
+    const g = document.createElement("canvas");
+    g.width = g.height = 150;
+    const c = g.getContext("2d");
+    const img = c.createImageData(150, 150);
+    for (let i = 0; i < img.data.length; i += 4){
+      const v = 122 + (Math.random() * 66 - 33);
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+      img.data[i + 3] = 255;
+    }
+    c.putImageData(img, 0, 0);
+    document.getElementById("grain").style.backgroundImage = `url(${g.toDataURL()})`;
+  })();
+
+  /* ═══════════════════════════════════════════════════════════
+     6. THE CONE — two layers, so a change dissolves
+     ═══════════════════════════════════════════════════════════ */
+  const cones = [document.getElementById("coneA"), document.getElementById("coneB")];
+  let front = 0;
+  cones.forEach(c => { c.src = SRC(FLAVOURS[0].key); });
+  cones[0].classList.add("is-on");
+
+  function showCone(key){
+    const src = SRC(key);
+    if (cones[front].getAttribute("src") === src) return;
+    const back = 1 - front;
+    /* A preloaded face is `complete` the moment the src lands, so both
+       the handler and the check below fire. Painting twice swaps the
+       layers and then swaps them back on the same element, leaving
+       neither lit — hence the latch. */
+    let painted = false;
+    const paint = () => {
+      if (painted) return;
+      painted = true;
+      cones[back].onload = null;
+      cones[back].classList.add("is-on");
+      cones[front].classList.remove("is-on");
+      front = back;
+    };
+    cones[back].onload = paint;
+    cones[back].src = src;
+    if (cones[back].complete) paint();
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     7. CHOOSING
+     ═══════════════════════════════════════════════════════════ */
+  let swapTimer = 0;
+
+  function select(i, { fromUser = true } = {}){
+    i = mod(Math.round(i), N);
+    const changed = i !== st.selected;
+    st.selected = i;
+    st.target = st.pos + wrapDelta(st.pos, i);
+    if (fromUser) st.userTouched = true;
+
+    const f = FLAVOURS[i];
+    chips.forEach((c, k) => c.setAttribute("aria-pressed", String(k === i)));
+    showCone(f.key);
+    live.textContent = `${f.name}, ${f.price}`;
+
+    if (!changed) return;
+
+    const write = () => {
+      metaEl.textContent  = `${f.tag.toUpperCase()} · ${f.kcal} ККАЛ`;
+      nameEl.textContent  = f.name;
+      kcalEl.textContent  = `${f.kcal} ккал`;
+      priceEl.textContent = f.price;
+      ingRows.forEach((el, k) => { el.textContent = f.ing[k]; });
+    };
+
+    if (reduced){ write(); return; }
+
+    /* the readout drops out, swaps behind the fade, and rises
+       back — one write per change, the transition carries it */
+    clearTimeout(swapTimer);
+    info.classList.add("is-swapping");
+    swapTimer = setTimeout(() => {
+      write();
+      info.classList.remove("is-swapping");
+    }, 200);
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     8. LAYOUT
+     ═══════════════════════════════════════════════════════════ */
+  function measure(){
+    const r = screen.getBoundingClientRect();
+    st.w = r.width;
+    st.h = r.height;
+    const narrow = r.width < 860 || r.width / r.height < .75;
+    st.L = narrow ? GEO.narrow : GEO.wide;
+    arc.style.setProperty("--chip", st.L.chip + "px");
+  }
+
+  function layout(){
+    const L = st.L;
+    for (let i = 0; i < N; i++){
+      const slot  = wrapDelta(st.pos, i);
+      const theta = slot * L.step;
+      const along = Math.sin(theta) * L.radius;        // along the arc
+      const away  = -(1 - Math.cos(theta)) * L.bow;    // and leaning off it
+
+      const dist = Math.abs(slot);
+      const sc = clamp(1 - dist * SCALE_FALL, .5, 1);
+      const op = clamp(1 - dist * L.fade, 0, 1);
+
+      const s = chips[i].style;
+      s.setProperty("--x", (L.vertical ? away : along).toFixed(2) + "px");
+      s.setProperty("--y", (L.vertical ? along : away).toFixed(2) + "px");
+      s.setProperty("--rot", (theta * L.rotDamp * 180 / Math.PI).toFixed(2) + "deg");
+      s.setProperty("--sc", sc.toFixed(3));
+      s.setProperty("--op", op.toFixed(3));
+      s.zIndex = String(40 - Math.round(dist * 10));
+
+      /* a chip faded this far out must not be clickable, and must
+         not be a tab stop either */
+      const liveChip = op >= .12;
+      s.pointerEvents = liveChip ? "auto" : "none";
+      chips[i].tabIndex = liveChip ? 0 : -1;
+      chips[i].setAttribute("aria-hidden", liveChip ? "false" : "true");
+    }
+  }
+
+  /* the ground is repainted rather than transitioned: CSS has no
+     interpolation for a gradient, so the colours tween here */
+  function paintWash(dt){
+    const f = FLAVOURS[st.selected];
+    const k = reduced ? 1 : 1 - Math.pow(.004, dt);
+    st.accent = lerpC(st.accent, hexToRgb(f.accent), k);
+    st.soft   = lerpC(st.soft,   hexToRgb(f.soft),   k);
+
+    wash.style.background =
+      `radial-gradient(122% 112% at 50% 94%, ${rgbCss(st.accent)} 0%, ` +
+      `${rgbCss(st.soft)} 44%, ${rgbCss(GROUND)} 100%)`;
+    screen.style.setProperty("--accent", rgbCss(st.accent));
+    screen.style.setProperty("--soft", rgbCss(st.soft));
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     9. LOOP
+     ═══════════════════════════════════════════════════════════ */
+  let last = performance.now(), auto = 0, running = false;
+
+  function tick(now){
+    if (!running) return;
+    const dt = Math.min(.05, (now - last) / 1000);
+    last = now;
+
+    if (!st.dragging){
+      const d = st.target - st.pos;
+      st.vel += d * 172 * dt;
+      st.vel *= Math.pow(.0009, dt);
+      st.pos += st.vel * dt;
+      if (Math.abs(d) < .0004 && Math.abs(st.vel) < .01){
+        st.pos = st.target;
+        st.vel = 0;
+      }
+    }
+
+    layout();
+    paintWash(dt);
+
+    if (!reduced && !st.userTouched){
+      auto += dt;
+      if (auto > 4.4){ auto = 0; select(st.selected + 1, { fromUser: false }); }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function start(){
+    if (running) return;
+    running = true;
+    last = performance.now();
+    requestAnimationFrame(tick);
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     10. INPUT
+     ═══════════════════════════════════════════════════════════ */
+  arc.addEventListener("keydown", e => {
+    const fwd  = e.key === "ArrowDown"  || e.key === "ArrowRight";
+    const back = e.key === "ArrowUp"    || e.key === "ArrowLeft";
+    if (!fwd && !back) return;
+    e.preventDefault();
+    select(st.selected + (fwd ? 1 : -1));
+    chips[st.selected].focus();
+  });
+
+  let dragAt = 0, dragPos = 0, pid = null;
+
+  arc.addEventListener("pointerdown", e => {
+    pid = e.pointerId;
+    arc.setPointerCapture(pid);
+    st.dragging = true;
+    st.userTouched = true;
+    arc.classList.add("is-dragging");
+    dragAt = st.L.vertical ? e.clientY : e.clientX;
+    dragPos = st.pos;
+  });
+  arc.addEventListener("pointermove", e => {
+    if (!st.dragging || e.pointerId !== pid) return;
+    const perSlot = Math.sin(st.L.step) * st.L.radius;
+    const now = st.L.vertical ? e.clientY : e.clientX;
+    st.pos = dragPos - (now - dragAt) / perSlot;
+  });
+  function endDrag(){
+    if (!st.dragging) return;
+    st.dragging = false;
+    arc.classList.remove("is-dragging");
+    select(Math.round(st.pos));
+  }
+  arc.addEventListener("pointerup", endDrag);
+  arc.addEventListener("pointercancel", endDrag);
+
+  let wheelLock = 0;
+  screen.addEventListener("wheel", e => {
+    const now = performance.now();
+    if (now - wheelLock < 240) return;
+    const step = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    if (Math.abs(step) < 4) return;
+    e.preventDefault();
+    wheelLock = now;
+    select(st.selected + Math.sign(step));
+  }, { passive: false });
+
+  document.getElementById("addEl").addEventListener("click", () => {
+    const f = FLAVOURS[st.selected];
+    live.textContent = `${f.name}, ${f.price} — добавлено в заказ`;
+    if (reduced) return;
+    priceEl.animate([
+      { transform: "scale(1)" }, { transform: "scale(.9)" }, { transform: "scale(1)" },
+    ], { duration: 320, easing: "cubic-bezier(.16,1,.3,1)" });
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) running = false;
+    else start();
+  });
+
+  /* ═══════════════════════════════════════════════════════════
+     11. BOOT
+     ═══════════════════════════════════════════════════════════ */
+  new ResizeObserver(() => { measure(); layout(); }).observe(screen);
+
+  measure();
+  select(0, { fromUser: false });
+  layout();
+  paintWash(1);
+  start();
+})();
+</script>
