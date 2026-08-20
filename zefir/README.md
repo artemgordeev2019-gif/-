@@ -34,17 +34,24 @@
 | Файл | Что это |
 | --- | --- |
 | `src/index.html` | Исходная страница: маркер `/*@FONTS@*/` вместо шрифтов, маркеры `@IMG` — слоты под фото |
-| `build/build.py` | Сборка: вшивает шрифты и фото в страницу как data-URI |
+| `build/build.py` | Сборка: вшивает шрифты и фото, генерирует SEO-файлы |
+| `build/make_og_image.py` | Отрисовка `og-image.png` — карточки 1200×630 для шеринга |
 | `build/*.woff2` | Cormorant + Commissioner, latin/cyrillic, скачаны с Google Fonts |
 | `references/` | «Вход» для фото — файлы отсюда попадают в слоты (см. `references/README.md`) |
 | `dist/index.html` | Собранная самодостаточная страница — не тянет ни одного внешнего ресурса |
 | `DESIGN-PROMPT.md` | Промт-хендовер: по нему дизайн можно воспроизвести или продолжить с нуля |
+| `SEO-AUDIT-PROGRESS.md` | Аудит SEO/GEO: находки, что исправлено, баллы, что осталось |
 
 ## Сборка
 
 ```sh
-python3 build/build.py
+python3 build/build.py                              # без домена
+python3 build/build.py --site-url https://<домен>   # для публикации
 ```
+
+С `--site-url` дополнительно появляются `canonical`, `og:url`/`og:image`,
+`robots.txt` и `sitemap.xml`. Без флага они не выпускаются намеренно:
+canonical, указывающий на угаданный домен, хуже, чем его отсутствие.
 
 ## Как добавить фото
 
