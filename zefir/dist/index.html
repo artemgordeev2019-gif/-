@@ -2,31 +2,44 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>zefir — студия маникюра и педикюра</title>
+<title>Zefir — студия маникюра и педикюра</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="zefir — студия маникюра и педикюра. Аккуратная работа, стойкое покрытие, запись в Instagram Direct.">
-<meta name="theme-color" content="#170B22">
+<meta name="description" content="Zefir — студия маникюра и педикюра. Аккуратная работа, стойкое покрытие, запись в Instagram Direct.">
+<meta name="theme-color" content="#12081A">
 <!-- Favicon: the Z monogram as a solid path, not <text> — at 16px a
      webfont wouldn't be loaded for the icon, and the flourish would
      just read as noise, so only the letter survives the size cut. -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23221331'/%3E%3Cpath d='M30 28 H72 V35 L44 66 H73 V73 H28 V66 L56 35 H30 Z' fill='%23D8B26B'/%3E%3C/svg%3E">
 
 <meta property="og:type" content="website">
-<meta property="og:title" content="zefir — студия маникюра и педикюра">
+<meta property="og:site_name" content="Zefir">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:title" content="Zefir — студия маникюра и педикюра">
 <meta property="og:description" content="Аккуратная работа, стойкое покрытие, запись в Instagram Direct.">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="zefir — студия маникюра и педикюра">
+<meta name="twitter:title" content="Zefir — студия маникюра и педикюра">
 <meta name="twitter:description" content="Аккуратная работа, стойкое покрытие, запись в Instagram Direct.">
+
+<!-- Everything that needs the live origin (canonical, og:url, og:image,
+     twitter:card) is written here by build/build.py --site-url. Without
+     that flag the block stays empty on purpose: a canonical pointing at a
+     guessed domain is worse than no canonical at all. -->
+<meta name="twitter:card" content="summary">
 
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "BeautySalon",
-  "name": "zefir",
-  "description": "Студия маникюра и педикюра",
-  "sameAs": [
-    "https://www.instagram.com/zefir.manicure/",
-    "https://www.instagram.com/zefir.beautystudio/"
+  "@graph": [
+    {
+      "@type": "BeautySalon",
+      "@id": "#business",
+      "name": "Zefir",
+      "description": "Студия маникюра и педикюра",
+      "priceRange": "₽₽",
+      "sameAs": [
+        "https://www.instagram.com/zefir.manicure/",
+        "https://www.instagram.com/zefir.beautystudio/"
+      ]
+    }
   ]
 }
 </script>
