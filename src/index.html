@@ -768,8 +768,11 @@ body{
       summitHalf: 0.30, summitDrop: 0.42,
     },
     narrow: {
-      ref: 430, radius: 300, step: 0.34,
-      ringY: 0.735, cupY: 0.335, card: 104, cupPct: 0.46,
+      /* smaller cards on a tighter arc: on a phone the old 104/300 pair put
+         the outer cards a good 30 px past the frame, so they were cropped
+         rather than fanned */
+      ref: 430, radius: 206, step: 0.36,
+      ringY: 0.735, cupY: 0.335, card: 72, cupPct: 0.46,
       summitHalf: 0.62, summitDrop: 0.26,
     },
   };
@@ -886,7 +889,8 @@ body{
     const L = st.L = r.width < 700 ? GEO.narrow : GEO.wide;
     st.scale = Math.min(1.35, Math.max(.42, r.width / L.ref));
 
-    screen.style.setProperty("--card-size", Math.round(L.card * st.scale) + "px");
+    st.cardPx = Math.round(L.card * st.scale);
+    screen.style.setProperty("--card-size", st.cardPx + "px");
 
     /* bounded by width AND height — a short viewport must not hand the cup
        the whole screen and push the headline off the bottom */
@@ -926,8 +930,30 @@ body{
          Smoothstep gets there cleanly and also softens the emergence. */
       const hole = Math.min(1, dist / .95);
       const holeS = hole * hole * (3 - 2 * hole);
-      const edge = Math.max(0, Math.min(1, (N / 2 - dist) / .85));
-      const op = holeS * edge * t;
+      /* Two separate fades, and the card takes whichever is stricter.
+
+         · slotFade keeps the wrap-around invisible: the card furthest from
+           the centre is the one that teleports from one side to the other,
+           so it must be gone before it gets there.
+         · edgeFade is about the frame. Opacity used to be derived from the
+           slot index alone, which meant a card could still be 60 % — or, on
+           a phone, a full 100 % — opaque while its corner was already past
+           the rounded edge. The frame then guillotined it and left a white
+           sliver. Now the card's real rotated box is measured against the
+           screen, and it reaches zero by the time it touches. */
+      const rot = theta * GEO.rotDamp;
+      const side = st.cardPx * sc;
+      const half = side / 2 * (Math.abs(Math.cos(rot)) + Math.abs(Math.sin(rot)));
+      const cx = st.w / 2 + x;
+      const cy = st.h / 2 + y + dy;
+      const clear = Math.min(
+        cx - half, st.w - (cx + half),
+        cy - half, st.h - (cy + half));
+      const band = Math.max(1, side * .35);
+
+      const slotFade = Math.max(0, Math.min(1, (N / 2 - dist) / .85));
+      const edgeFade = Math.max(0, Math.min(1, clear / band));
+      const op = holeS * Math.min(slotFade, edgeFade) * t;
 
       const s = cards[i].style;
       s.setProperty("--x", x.toFixed(2) + "px");
