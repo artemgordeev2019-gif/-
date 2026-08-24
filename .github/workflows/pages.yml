@@ -1,0 +1,62 @@
+name: Deploy to Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; a newer push supersedes an in-flight one.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build dist/ (inlines the subset fonts as data URIs)
+        run: python3 build/inline_fonts.py
+
+      - name: Verify the fonts actually inlined
+        # The pages are only self-contained if the marker was replaced. A
+        # page shipped with the marker intact would silently fall back to a
+        # system font, which is exactly the failure the build exists to stop.
+        run: |
+          if grep -l '@FONTS@' dist/*.html; then
+            echo "::error::a built page still carries the /*@FONTS@*/ marker"
+            exit 1
+          fi
+          for f in dist/index.html dist/design-system.html; do
+            grep -q 'data:font/woff2;base64' "$f" \
+              || { echo "::error::$f has no inlined font"; exit 1; }
+          done
+          echo "ok: fonts inlined in every page"
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
