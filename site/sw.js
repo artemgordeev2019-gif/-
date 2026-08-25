@@ -1,7 +1,8 @@
 /* Оболочка сайта в кэше: страница открывается и без сети.
    Данные живут в localStorage браузера и кэш их не трогает. */
-var CACHE = "masterskaya-v1";
-var SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png"];
+var CACHE = "masterskaya-v2";
+var SHELL = ["./", "./index.html", "./config.js", "./vendor/supabase.js",
+             "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(SHELL); }).then(function(){ return self.skipWaiting(); }));
@@ -18,8 +19,12 @@ self.addEventListener("fetch", function(e){
   if(req.method !== "GET") return;
   var url = new URL(req.url);
   if(url.origin !== location.origin) return;
-  /* общее состояние всегда берём из сети, кэш его не подменяет */
+  /* общее состояние и настройки подключения всегда берём из сети */
   if(url.pathname.indexOf("/data/") > -1) return;
+  if(/config\.js$/.test(url.pathname)){
+    e.respondWith(fetch(req).catch(function(){ return caches.match(req); }));
+    return;
+  }
 
   /* HTML — сначала сеть (чтобы приходили обновления), кэш как запасной путь */
   if(req.mode === "navigate" || (req.headers.get("accept") || "").indexOf("text/html") > -1){
